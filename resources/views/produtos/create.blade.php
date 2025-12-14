@@ -42,7 +42,7 @@
                             id="estoque" name="estoque" value="{{ old('estoque', 0) }}"
                             min="0" required>
                     @error('estoque')
-                            <div class="invalid-feedback">{{ $mensagem }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                         </div>
                     </div>
