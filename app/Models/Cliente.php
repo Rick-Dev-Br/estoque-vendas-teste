@@ -40,4 +40,9 @@ class Cliente extends Model
     {
         return $this->status == 'ativo';
     }
+
+    public function ultimasVendas($limite = 5)
+    {
+        return $this->vendas()->latest()->limit($limite);
+    }
 }

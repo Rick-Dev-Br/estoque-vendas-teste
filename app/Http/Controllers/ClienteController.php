@@ -61,7 +61,11 @@ class ClienteController extends Controller
      */
     public function edit(Cliente $cliente)
     {
-        return view('cliente.edit', compact('cliente'));
+        $cliente->load(['vendas' => function($q){
+            $q->latest()->limit(5);
+        }]);
+
+        return view('clientes.edit', compact('cliente'));
     }
 
     /**
@@ -69,21 +73,35 @@ class ClienteController extends Controller
      */
     public function update(Request $request, Cliente $cliente)
     {
-        $validator = Validator::make($request->all(), [
-            'nome' => 'required|string|max:100',
-            'email;' => 'required|email|unique:clientes,email,' . $cliente->id,
-            'status' => 'required|in:ativo,bloqueado',
+        $data = $request->validate([
+            'nome' => ['required', 'string', 'max:100'],
+            'nome_completo' => ['nullable', 'string', 'max:150'],
+            'email' => ['required', 'email', 'max:100', 'unique:clientes,email,' . $cliente->id],
+            'cpf' => ['nullable', 'string', 'max:14'],
+            'telefone' => ['nullable', 'string', 'max:20'],
+            'endereco' => ['nullable', 'string', 'max:255'],
+            'numero' => ['nullable', 'string', 'max:20'],
+            'complemento' => ['nullable', 'string', 'max:100'],
+            'bairro' => ['nullable', 'string', 'max:100'],
+            'cidade' => ['nullable', 'string', 'max:100'],
+            'estado' => ['nullable', 'string', 'size:2'],
+            'cep' => ['nullable', 'string', 'max:15'],
+            'status' => ['required', 'in:ativo,bloqueado'],
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
+        // Validar CPF único se fornecido
+        if (!empty($data['cpf'])) {
+            $cpfExiste = Cliente::where('cpf', $data['cpf'])
+                ->where('id', '!=', $cliente->id)
+                ->exists();
+            if ($cpfExiste) {
+                return back()->withErrors(['cpf' => 'CPF já cadastrado.'])->withInput();
+            }
         }
 
-        $cliente->update($request->all());
+        $cliente->update($data);
 
-        return redirect()->route('clientes.index')
+        return redirect()->route('clientes.edit', $cliente)
             ->with('success', 'Cliente atualizado com sucesso!');
     }
 

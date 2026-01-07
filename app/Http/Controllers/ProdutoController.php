@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Produto;
+use App\Models\Produto; // IMPORTANTE: Adicionar esta linha
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -113,5 +113,20 @@ class ProdutoController extends Controller
 
         return redirect()->route('produtos.index')
             ->with('success', 'Status do produto alterado!');
+    }
+
+    /**
+     * Display average sales per product.
+     */
+    public function mediaVendas()
+    {
+        $dados = Produto::query()
+            ->leftJoin('venda_itens', 'produtos.id', '=', 'venda_itens.produto_id')
+            ->selectRaw('produtos.id, produtos.nome, COALESCE(AVG(venda_itens.quantidade), 0) as media_quantidade')
+            ->groupBy('produtos.id', 'produtos.nome')
+            ->orderByDesc('media_quantidade')
+            ->get();
+
+        return view('produtos.media_vendas', compact('dados'));
     }
 }

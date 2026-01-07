@@ -120,15 +120,14 @@ class VendaController extends Controller
      */
     public function edit(Venda $venda)
     {
-        if ($venda->status != 'pendente') {
-            return redirect()->route('vendas.index')
-                ->with('error', 'Apenas vendas pendentes podem ser editadas.');
+        if ($venda->status !== 'pendente') {
+            abort(403, 'Só é possível editar vendas pendentes.');
         }
 
-        $clientes = Cliente::ativo()->get();
-        $produtos = Produto::ativo()->comEstoque()->get();
+        $clientes = Cliente::orderBy('nome')->get();
+        $produtos = Produto::orderBy('nome')->get();
 
-        $venda->load('itens');
+        $venda->load(['itens.produto', 'cliente']);
 
         return view('vendas.edit', compact('venda', 'clientes', 'produtos'));
     }
@@ -138,32 +137,37 @@ class VendaController extends Controller
      */
     public function update(Request $request, Venda $venda)
     {
-        if ($venda->status != 'pendente') {
-            return redirect()->route('vendas.index')
-                ->with('error', 'Não é possivel editar esta venda.');
+        if ($venda->status !== 'pendente') {
+            abort(403, 'Só é possível editar vendas pendentes.');
         }
 
-        $validator =  Validator::make($request->all(), [
-            'cliente_id' => 'required|exists:clientes,id',
+        $data = $request->validate([
+            'cliente_id' => ['required','exists:clientes,id'],
+            'forma_pagamento' => ['nullable','string','max:30'],
+            'data_compra' => ['nullable','date'],
+            'endereco_entrega' => ['nullable','string','max:255'],
+            'numero' => ['nullable','string','max:20'],
+            'complemento' => ['nullable','string','max:100'],
+            'bairro' => ['nullable','string','max:100'],
+            'cidade' => ['nullable','string','max:100'],
+            'estado' => ['nullable','string','size:2'],
+            'cep' => ['nullable','string','max:15'],
+            // Adicionando validação para itens (mantendo a lógica original)
             'itens' => 'required|array|min:1',
             'itens.*.produto_id' => 'required|exists:produtos,id',
             'itens.*.quantidade' => 'required|integer|min:1',
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
         DB::beginTransaction();
 
         try {
+            // Remover itens antigos
             $venda->itens()->delete();
 
             $total = 0;
             $itensData = [];
 
+            // Processar novos itens
             foreach ($request->itens as $item) {
                 $produto = Produto::find($item['produto_id']);
 
@@ -183,12 +187,23 @@ class VendaController extends Controller
                 ];
             }
 
+            // Atualizar dados da venda (incluindo novos campos)
             $venda->update([
                 'cliente_id' => $request->cliente_id,
-                'total' => $total
+                'total' => $total,
+                'forma_pagamento' => $request->forma_pagamento,
+                'data_compra' => $request->data_compra,
+                'endereco_entrega' => $request->endereco_entrega,
+                'numero' => $request->numero,
+                'complemento' => $request->complemento,
+                'bairro' => $request->bairro,
+                'cidade' => $request->cidade,
+                'estado' => $request->estado,
+                'cep' => $request->cep,
             ]);
 
-            foreach ($itensData  as $itemData) {
+            // Criar novos itens
+            foreach ($itensData as $itemData) {
                 VendaItem::create([
                     'venda_id' => $venda->id,
                     'produto_id' => $itemData['produto_id'],
@@ -199,8 +214,8 @@ class VendaController extends Controller
 
             DB::commit();
 
-            return redirect()->route('vendas.index')
-                ->with('success', 'Venda atualizada com sucesso!');
+            return redirect()->route('vendas.historico')
+                ->with('success', 'Venda atualizada!');
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -226,6 +241,9 @@ class VendaController extends Controller
             ->with('success', 'Venda excluída com sucesso!');
     }
 
+    /**
+     * Alterar status da venda
+     */
     public function alterarStatus(Request $request, Venda $venda)
     {
         $request->validate([
@@ -241,5 +259,17 @@ class VendaController extends Controller
             return redirect()->back()
                 ->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Exibir histórico de vendas
+     */
+    public function historico()
+    {
+        $vendas = Venda::with(['cliente', 'itens.produto'])
+            ->latest('created_at')
+            ->get();
+
+        return view('vendas.historico', compact('vendas'));
     }
 }
