@@ -14,26 +14,112 @@
                 <form action="{{ route('vendas.store') }}" method="POST">
                     @csrf
 
-                    <div class="mb-3">
-                        <label for="cliente_id" class="form-label">Cliente *</label>
-                        <select class="form-select @error('cliente_id') is-invalid @enderror"
-                                id="cliente_id" name="cliente_id" required>
-                            <option value="">Selecione um cliente</option>
-                            @foreach($clientes as $cliente)
-                                @if($cliente->status == 'ativo')
-                                <option value="{{ $cliente->id }}" {{ old('cliente_id') == $cliente->id ? 'selected' : '' }}>
-                                    {{ $cliente->nome }}
-                                </option>
-                                @endif
-                            @endforeach
-                        </select>
-                        @error('cliente_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cliente_id" class="form-label">Cliente *</label>
+                            <select class="form-select @error('cliente_id') is-invalid @enderror"
+                                    id="cliente_id" name="cliente_id" required>
+                                <option value="">Selecione um cliente</option>
+                                @foreach($clientes as $cliente)
+                                    @if($cliente->status == 'ativo')
+                                    <option value="{{ $cliente->id }}" {{ old('cliente_id') == $cliente->id ? 'selected' : '' }}>
+                                        {{ $cliente->nome }}
+                                    </option>
+                                    @endif
+                                @endforeach
+                            </select>
+                            @error('cliente_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="data_compra" class="form-label">Data de compra</label>
+                            <input type="datetime-local" class="form-control @error('data_compra') is-invalid @enderror"
+                                id="data_compra" name="data_compra"
+                                value="{{ old('data_compra') }}">
+                            @error('data_compra')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="forma_pagamento" class="form-label">Forma de pagamento</label>
+                            <input type="text" class="form-control @error('forma_pagamento') is-invalid @enderror"
+                                id="forma_pagamento" name="forma_pagamento"
+                                value="{{ old('forma_pagamento') }}">
+                            @error('forma_pagamento')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="endereco_entrega" class="form-label">Endereço de entrega</label>
+                            <input type="text" class="form-control @error('endereco_entrega') is-invalid @enderror"
+                                id="endereco_entrega" name="endereco_entrega"
+                                value="{{ old('endereco_entrega') }}">
+                            @error('endereco_entrega')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="numero" class="form-label">Número</label>
+                            <input type="text" class="form-control @error('numero') is-invalid @enderror"
+                                id="numero" name="numero"
+                                value="{{ old('numero') }}">
+                            @error('numero')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="complemento" class="form-label">Complemento</label>
+                            <input type="text" class="form-control @error('complemento') is-invalid @enderror"
+                                id="complemento" name="complemento"
+                                value="{{ old('complemento') }}">
+                            @error('complemento')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="bairro" class="form-label">Bairro</label>
+                            <input type="text" class="form-control @error('bairro') is-invalid @enderror"
+                                id="bairro" name="bairro"
+                                value="{{ old('bairro') }}">
+                            @error('bairro')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="cidade" class="form-label">Cidade</label>
+                            <input type="text" class="form-control @error('cidade') is-invalid @enderror"
+                                id="cidade" name="cidade"
+                                value="{{ old('cidade') }}">
+                            @error('cidade')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <input type="text" class="form-control @error('estado') is-invalid @enderror"
+                                id="estado" name="estado"
+                                value="{{ old('estado') }}" maxlength="2">
+                            @error('estado')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label for="cep" class="form-label">CEP</label>
+                            <input type="text" class="form-control @error('cep') is-invalid @enderror"
+                                id="cep" name="cep"
+                                value="{{ old('cep') }}">
+                            @error('cep')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label">Produtos *</label>
+                        <label class="form-label">Itens de venda *</label>
 
                         <div id="produtos-container">
 

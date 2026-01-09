@@ -39,6 +39,15 @@ class VendaController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'cliente_id' => 'required|exists:clientes,id',
+            'forma_pagamento' => 'nullable|string|max:30',
+            'data_compra' => 'nullable|date',
+            'endereco_entrega' => 'nullable|string|max:255',
+            'numero' => 'nullable|string|max:20',
+            'complemento' => 'nullable|string|max:100',
+            'bairro' => 'nullable|string|max:100',
+            'cidade' => 'nullable|string|max:100',
+            'estado' => 'nullable|string|size:2',
+            'cep' => 'nullable|string|max:15',
             'itens' => 'required|array|min:1',
             'itens.*.produto_id' => 'required|exists:produtos,id',
             'itens.*.quantidade' => 'required|integer|min:1',
@@ -80,7 +89,17 @@ class VendaController extends Controller
             $venda = Venda::create([
                 'cliente_id' => $request->cliente_id,
                 'total' => $total,
-                'status' => 'pendente'
+                'status' => 'pendente',
+                'status' => 'pendente',
+                'forma_pagamento' => $request->forma_pagamento,
+                'data_compra' => $request->data_compra,
+                'endereco_entrega' => $request->endereco_entrega,
+                'numero' => $request->numero,
+                'complemento' => $request->complemento,
+                'bairro' => $request->bairro,
+                'cidade' => $request->cidade,
+                'estado' => $request->estado,
+                'cep' => $request->cep,
             ]);
 
             foreach ($itensData as $itemData) {

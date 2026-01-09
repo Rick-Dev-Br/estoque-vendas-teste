@@ -85,10 +85,12 @@
                                 $notificacoesNaoLidas = $usuario?->unreadNotifications()->count() ?? 0;
                             @endphp
                             <li class="nav-item dropdown me-2">
-                                <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-bell"></i>
+                                <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown"
+                                    id="notificationDropdown" data-notifications-read-url="{{ route('notificacoes.ler') }}">
+                                    <i class="bi bi-bell-fill"></i>>
                                     @if($notificacoesNaoLidas > 0)
-                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                            id="notification-badge">
                                             {{ $notificacoesNaoLidas }}
                                         </span>
                                     @endif
@@ -96,7 +98,7 @@
                                 <ul class="dropdown-menu dropdown-menu-end p-2" style="min-width: 320px;">
                                     <li class="dropdown-header">Notificações</li>
                                     @forelse($notificacoes as $notificacao)
-                                        <li class="px-2 py-2 border-bottom">
+                                        <li class="px-2 py-2 border-bottom notification-item {{ $notificacao->read_at ? 'text-muted' : '' }}">
                                             <div class="small text-muted">
                                                 {{ $notificacao->created_at->diffForHumans() }}
                                             </div>
@@ -185,5 +187,44 @@
 
     </div>
     @stack('scripts')
+    @auth
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const dropdown = document.getElementById('notificationDropdown');
+                if (!dropdown) {
+                    return;
+                }
+
+                dropdown.addEventListener('shown.bs.dropdown', async () => {
+                    const badge = document.getElementById('notification-badge');
+                    if (!badge) {
+                        return;
+                    }
+
+                    const url = dropdown.dataset.notificationsReadUrl;
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        if (response.ok) {
+                            badge.remove();
+                            document.querySelectorAll('.notification-item').forEach(item => {
+                                item.classList.add('text-muted');
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Falha ao marcar notificações como lidas.', error);
+                    }
+                });
+            });
+        </script>
+    @endauth
 </body>
 </html>

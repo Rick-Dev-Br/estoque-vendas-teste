@@ -3,6 +3,7 @@
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\ClienteController;
@@ -65,6 +66,15 @@ Route::middleware(['auth'])->group(function () {
 
     Route::patch('vendas/{venda}/status', [VendaController::class, 'alterarStatus'])
         ->name('vendas.alterar-status');
+
+    Route::post('notificacoes/ler', function (Request $request) {
+        $usuario = $request->user();
+        if ($usuario) {
+            $usuario->unreadNotifications->markAsRead();
+        }
+
+        return response()->noContent();
+    })->name('notificacoes.ler');
 
 
     Route::get('/api/produtos/{id}', function ($id) {
