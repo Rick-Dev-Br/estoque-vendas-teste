@@ -152,7 +152,6 @@ class VendaController extends Controller
             'cidade' => ['nullable','string','max:100'],
             'estado' => ['nullable','string','size:2'],
             'cep' => ['nullable','string','max:15'],
-            // Adicionando validação para itens (mantendo a lógica original)
             'itens' => 'required|array|min:1',
             'itens.*.produto_id' => 'required|exists:produtos,id',
             'itens.*.quantidade' => 'required|integer|min:1',
@@ -161,13 +160,13 @@ class VendaController extends Controller
         DB::beginTransaction();
 
         try {
-            // Remover itens antigos
+            // Remove old items
             $venda->itens()->delete();
 
             $total = 0;
             $itensData = [];
 
-            // Processar novos itens
+            // Procss of items
             foreach ($request->itens as $item) {
                 $produto = Produto::find($item['produto_id']);
 
@@ -187,7 +186,7 @@ class VendaController extends Controller
                 ];
             }
 
-            // Atualizar dados da venda (incluindo novos campos)
+            // att data of sell
             $venda->update([
                 'cliente_id' => $request->cliente_id,
                 'total' => $total,
@@ -202,7 +201,7 @@ class VendaController extends Controller
                 'cep' => $request->cep,
             ]);
 
-            // Criar novos itens
+            // crate new items
             foreach ($itensData as $itemData) {
                 VendaItem::create([
                     'venda_id' => $venda->id,
@@ -242,7 +241,7 @@ class VendaController extends Controller
     }
 
     /**
-     * Alterar status da venda
+     * altear the status sell
      */
     public function alterarStatus(Request $request, Venda $venda)
     {
@@ -262,7 +261,7 @@ class VendaController extends Controller
     }
 
     /**
-     * Exibir histórico de vendas
+     * show sales history
      */
     public function historico()
     {

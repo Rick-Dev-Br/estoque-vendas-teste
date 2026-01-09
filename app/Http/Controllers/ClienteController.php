@@ -89,7 +89,7 @@ class ClienteController extends Controller
             'status' => ['required', 'in:ativo,bloqueado'],
         ]);
 
-        // Validar CPF único se fornecido
+        // check only cpf
         if (!empty($data['cpf'])) {
             $cpfExiste = Cliente::where('cpf', $data['cpf'])
                 ->where('id', '!=', $cliente->id)

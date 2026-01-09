@@ -59,7 +59,7 @@ class Produto extends Model
     }
 
     /**
-     *
+     * att status
      */
     public function atualizarEstoque(int $quantidade, string $operacao = 'baixa')
     {

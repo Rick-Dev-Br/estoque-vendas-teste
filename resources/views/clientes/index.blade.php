@@ -38,6 +38,9 @@
                             @endif
                         </td>
                         <td class="text-center">
+                            <a href="{{ route('clientes.edit', $cliente) }}" class="btn btn-sm btn-info" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
                             <form action="{{ route('clientes.toggle-status', $cliente) }}" method="POST" class="d-inline">
                                 @csrf
                                 @method('PATCH')
