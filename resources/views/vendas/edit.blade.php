@@ -31,9 +31,9 @@
                             <select class="form-select @error('cliente_id') is-invalid @enderror"
                                     name="cliente_id" id="cliente_id" required>
                                 <option value="">Selecione um cliente</option>
-                                @foreach($clientes as cliente)
+                                @foreach($clientes as $cliente)
                                     <option value="{{ $cliente->id }}">
-                                        {{ (old('cliente_id', $venda->clinete_id) == $cliente->) ? 'selected' : ''  }}>
+                                        {{ (old('cliente_id', $venda->cliente_id) == $cliente->id) ? 'selected' : '' }}>
                                         {{ $cliente->nome }}
                                         {{ $cliente->status === 'bloqueado' ? '(bloqueado)' : ''  }}
                                     </option>
@@ -132,11 +132,11 @@
                     <div class="mb-4">
                         <label class="form-label">Itens da venda *</label>
                         <div id="produtos-container">
-                            @foreach($itens as $item)
+                            @foreach($itens as $index => $item)
                             <div class="row mb-2 produto-item">
                                 <div class="col-md-6">
                                     <select class="form-select produto-select"
-                                        name="itens[{{ $index }}]['produto_id']" required>
+                                        name="itens[{{ $index }}][produto_id]" required>
                                         <option value="">Selecione um produto</option>
                                         @foreach($produtos as $produto)
                                             @php
@@ -145,7 +145,7 @@
                                             @endphp
                                             <option value="{{ $produto->id }}"
                                                 data-preco="{{ $produto->preco }}"
-                                                {{ $selecionando ? 'slected' : '' }}
+                                                {{ $selecionando ? 'selected' : '' }}
                                                 {{ (!$selecionando && $indisponivel) ? 'disabled' : ''}}>
                                                 {{ $produto->nome }} - R$ {{ number_format($produto->preco, 2, ',', '.') }}
                                                 (Estoque: {{ $produto->estoque }})
@@ -179,7 +179,7 @@
                             Atualize os itens para recalcular o total da venda.
                         </span>
                         <div class="fw-semibold">
-                            Total: R$ <span id="total-venda">{{ number_format($venda, 2, ',', '.') }}</span>
+                            Total: R$ <span id="total-venda">{{ number_format($venda->total, 2, ',', '.') }}</span>
                         </div>
                     </div>
 
