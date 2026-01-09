@@ -13,11 +13,21 @@ class Venda extends Model
     protected $fillable = [
         'cliente_id',
         'total',
-        'status'
+        'status',
+        'data_compra',
+        'forma_pagamento',
+        'endereco_entrega',
+        'numero',
+        'complemento',
+        'bairro',
+        'cidade',
+        'estado',
+        'cep'
     ];
 
     protected $casts = [
-        'total' => 'decimal:2'
+        'total' => 'decimal:2',
+        'data_compra' => 'datetime'
     ];
 
 
