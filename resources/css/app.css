@@ -1,1 +1,52 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
+
+:root {
+    --app-surface: #f8f9fb;
+    --app-border: #d9dee6;
+    --app-text-muted: #6c757d;
+    --app-focus: #4c6fff
+}
+
+body {
+    background-color: ##f3f5f8;
+}
+
+.card {
+    border-color: var(--app-border);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.card-header {
+    background-color: #ffffff;
+    border-bottom-color: var(--app-border);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.form-control,
+.form-select {
+    background-color: var(--app-surface);
+    border-color: var(--app-border);
+}
+
+.form-control::placeholder {
+    color:var(--app-text-muted);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--app-focus);
+    box-shadow: 0 0 0 0.2rem rgba(76, 111, 255, 0.2);
+}
+
+.btn-primary {
+    box-shadow: 0 6px 16px rgba(13, 110, 253, 0.25);
+}
+
+.table thead th {
+    font-weight: 600;
+    color: #111827;
+}

@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
         <h5 class="mb-0">
             <i class="bi bi-cart me-2"></i>Vendas
         </h5>
@@ -14,7 +14,7 @@
     <div class="card-body">
         @if($vendas->count() > 0)
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
                         <th>ID</th>
@@ -32,7 +32,7 @@
                         <td>R$ {{ number_format($venda->total, 2, ',', '.') }}</td>
                         <td>
                             @if($venda->status == 'pendente')
-                            <span class="badge bg-warning">Pendente</span>
+                            <span class="badge bg-warning text-dark">Pendente</span>
                             @elseif($venda->status == 'pago')
                             <span class="badge bg-success">Pago</span>
                             @else
@@ -40,24 +40,30 @@
                             @endif
                         </td>
                         <td class="text-center">
-                            @if($venda->status == 'pendente')
-                            <form action="{{ route('vendas.alterar-status', $venda) }}" method="POST" class="d-inline">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="status" value="pago">
-                                <button type="submit" class="btn btn-sm btn-success" title="Marcar como Pago">
-                                    <i class="bi bi-check-circle"></i>
-                                </button>
-                            </form>
+                            <div class="d-inline-flex flex-wrap gap-1 justify-content-center">
+                                @if($venda->status == 'pendente')
+                                <a href="{{ route('vendas.edit', $venda) }}" class="btn btn-sm btn-outline-primary" title="Editar venda">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <form action="{{ route('vendas.alterar-status', $venda) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="pago">
+                                    <button type="submit" class="btn btn-sm btn-success" title="Marcar como Pago">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                </form>
 
                             <form action="{{ route('vendas.alterar-status', $venda) }}" method="POST" class="d-inline">
                                 @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="status" value="cancelado">
-                                <button type="submit" class="btn btn-sm btn-danger" title="Cancelar">
-                                    <i class="bi bi-x-circle"></i>
-                                </button>
-                            </form>
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="cancelado">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Cancelar">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </form>
+                                @else
+                                <span class="text-muted small">Sem ações disponíveis</span>
                             @endif
                         </td>
                     </tr>

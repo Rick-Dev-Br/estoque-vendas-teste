@@ -40,24 +40,29 @@
                                 {{ $produto->status_formatado }}
                             </span>
                         </td>
-                        <td class="table-actions">
-                            <a href="{{ route('produtos.edit', $produto) }}" class="btn brn-sm btn-outline-primary" title="Editar">
+                        <td class="text-center">
+                            <a href="{{ route('produtos.edit', $produto) }}" class="btn btn-sm btn-info" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </a>
 
                             <form action="{{ route('produtos.toggle-status', $produto) }}" method="POST" class="d-inline">
                                 @csrf
                                 @method('PATCH')
-                                <button type="submit" class="btn btn-sm btn-outline-{{ $produto->status == 'ativo' ? 'warning' : 'success' }}"
-                                title="{{ $produto->status == 'ativo' ? 'Inativar' : 'Ativar' }}">
-                                <i class="bi bi-{{ $produto->status == 'ativo' ? 'x-circle' : 'check-circle' }}"></i>
-                            </button>
+                                @if($produto->status == 'ativo')
+                                <button type="submit" class="btn btn-sm btn-warning" title="Inativar">
+                                    <i class="bi bi-lock"></i>
+                                </button>
+                                @else
+                                <button type="submit" class="btn btn-sm btn-success" title="Ativar">
+                                    <i class="bi bi-unlock"></i>
+                                </button>
+                                @endif
                             </form>
 
                             <form action="{{ route('produtos.destroy', $produto) }}" method="POST" class="d-inline">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                <button type="submit" class="btn btn-sm btn-danger"
                                 onclick="return confirm('Tem certeza que deseja excluir este produto?')" title="Excluir">
                                 <i class="bi bi-trash"></i>
                             </button>
