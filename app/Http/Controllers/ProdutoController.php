@@ -60,7 +60,16 @@ class ProdutoController extends Controller
      */
     public function show(Produto $produto)
     {
-        return view('produtos.show', compact('produto'));
+        $historico = $produto->vendaItens()
+            ->select('venda_itens.*')
+            ->join('vendas', 'vendas.id', '=', 'venda_itens.venda_id')
+            ->where('vendas.status', 'pago')
+            ->with(['venda.cliente'])
+            ->orderByDesc('vendas.data_compra')
+            ->orderByDesc('venda_itens.created_at')
+            ->get();
+
+        return view('produtos.show', compact('produto', 'historico'));
     }
 
     /**

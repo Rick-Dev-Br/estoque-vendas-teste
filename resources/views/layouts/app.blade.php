@@ -69,10 +69,10 @@
                     <ul class="navbar-nav ms-auto">
                         @guest
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('login') }}">Login</a>
+                                <a class="nav-link" href="{{ route('login') }}">Entrar</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('register') }}">Registrar</a>
+                                <a class="nav-link" href="{{ route('register') }}">Cadastrar</a>
                             </li>
                         @else
                             @php

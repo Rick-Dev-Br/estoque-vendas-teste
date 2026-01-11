@@ -33,7 +33,7 @@
                             @enderror
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="email" class="form-label">Email *</label>
+                            <label for="email" class="form-label">E-mail *</label>
                             <input type="email" class="form-control @error('email') is-invalid @enderror"
                                 id="email" name="email" value="{{ old('email') }}" required>
                             @error('email')

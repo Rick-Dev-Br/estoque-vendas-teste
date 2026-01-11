@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="row justify-content-center">
-    <div class="col-md-6">
+    <div class="col-lg-6">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
@@ -61,6 +61,54 @@
                         <i class="bi bi-trash"></i> Excluir
                     </button>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-10">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i> Histórico de saídas do estoque
+                </h5>
+                <small class="text-muted d-block mt-1">
+                    Exibindo apenas vendas pagas (estoque baixando).
+                </small>
+            </div>
+            <div class="card-body">
+                @if ($historico->isEmpty())
+                    <p class="mb-0 text-muted">Nenhuma saída registrada para este produto.</p>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-sm aling-meddle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Venda</th>
+                                    <th>Cliente</th>
+                                    <th>Quantidade</th>
+                                    <th>Data da venda</th>
+                                    <th>Preço unitário</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($historico as $item)
+                                    @php
+                                        $dataVenda = $item->venda?->data_compra ?? $item->venda?->created_at;
+                                    @endphp
+                                    <tr>
+                                        <td>#{{ $item->venda?->id ?? '-' }}</td>
+                                        <td>{{ $item->venda?->cliente?->nome ?? 'Cliente não informado' }}</td>
+                                        <td>{{ $item->quantidade }} unidades</td>
+                                        <td>{{ $dataVenda ? $dataVenda->format('d/m/Y H:i') : '-' }}</td>
+                                        <td>{{ $item->preco_formatado }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
