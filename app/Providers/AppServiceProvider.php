@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Produto;
+use App\Models\User;
 use App\Notifications\EstoqueBaixoNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
@@ -31,7 +32,7 @@ class AppServiceProvider extends ServiceProvider
         View::composer('layouts.app', function () {
             $usuario = Auth::user();
 
-            if (!$usuario) {
+            if (!$usuario instanceof User) {
                 return;
             }
 

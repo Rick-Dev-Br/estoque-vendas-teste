@@ -6,10 +6,8 @@
 
     <title>{{ config('app.name', 'Laravel') }}</title>
 
-    <!-- CSRF -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <!-- Bootstrap + App -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
@@ -28,7 +26,6 @@
 
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
 
-                    <!-- Left -->
                     <ul class="navbar-nav me-auto">
                         @auth
                             <li class="nav-item">
@@ -69,7 +66,6 @@
                         @endauth
                     </ul>
 
-                    <!-- Right -->
                     <ul class="navbar-nav ms-auto">
                         @guest
                             <li class="nav-item">
@@ -87,7 +83,7 @@
                             <li class="nav-item dropdown me-2">
                                 <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown"
                                     id="notificationDropdown" data-notifications-read-url="{{ route('notificacoes.ler') }}">
-                                    <i class="bi bi-bell-fill"></i>>
+                                    <i class="bi bi-bell-fill"></i>
                                     @if($notificacoesNaoLidas > 0)
                                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                                             id="notification-badge">
