@@ -35,14 +35,33 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        View::composer('layouts.app', function () {
-            $usuario = Auth::user();
+                View::composer('layouts.app', function ($view) {
+                    $usuario = Auth::user();
+                    $notificacoes = collect();
+                    $notificacoesNaoLidas = 0;
 
-            if (!$usuario instanceof User) {
-                return;
+
+            if ($usuario instanceof User && Schema::hasTable('notifications')) {
+                $notificacoes = Cache::remember("notificacoes.lista.{$usuario->id}", now()->addSeconds(30), function () use ($usuario) {
+                    return $usuario->notifications()
+                        ->latest()
+                        ->take(5)
+                        ->get(['id', 'type', 'data', 'read_at', 'created_at']);
+                });
+
+                $notificacoesNaoLidas = Cache::remember("notificacoes.nao_lidas.{$usuario->id}", now()->addSeconds(30), function () use ($usuario) {
+                    return $usuario->unreadNotifications()->count();
+                });
             }
 
-            if (!Schema::hasTable('produtos') || !Schema::hasTable('notifications')) {
+
+            $view->with([
+                'notificacoes' => $notificacoes,
+                'notificacoesNaoLidas' => $notificacoesNaoLidas,
+            ]);
+
+
+            if (!$usuario instanceof User || !Schema::hasTable('produtos') || !Schema::hasTable('notifications')) {
                 return;
             }
 
@@ -56,7 +75,7 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
-                $cacheKey = "notificacoes.estoque_baixo.{$usuario->id}";
+            $cacheKey = "notificacoes.estoque_baixo.{$usuario->id}";
             $notificacaoRecente = Cache::remember($cacheKey, now()->addMinute(), function () use ($usuario) {
                 return $usuario->notifications()
                     ->where('type', EstoqueBaixoNotification::class)
@@ -64,10 +83,12 @@ class AppServiceProvider extends ServiceProvider
                     ->exists();
             });
 
-            if (!$notificacaoRecente) {
-                $usuario->notify(new EstoqueBaixoNotification($produtosBaixoEstoque->toArray()));
-                Cache::put($cacheKey, true, now()->addMinutes(30));
+            if ($notificacaoRecente) {
+                return;
             }
+
+            $usuario->notify(new EstoqueBaixoNotification($produtosBaixoEstoque->toArray()));
+            Cache::put($cacheKey, true, now()->addMinutes(30));
         });
     }
 }
