@@ -11,8 +11,8 @@ use App\Http\Controllers\VendaController;
 
 /**
  * Página inicial:
- * - Se estiver logado -> mostra dashboard (welcome)
- * - Se não estiver -> manda pro login
+ * -
+ * -
  */
 Route::get('/', function () {
     return auth::check()
