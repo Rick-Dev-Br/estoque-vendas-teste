@@ -8,7 +8,7 @@
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css'])
 </head>
 <body>
     <div id="app">
@@ -188,6 +188,7 @@
 
     </div>
     @stack('scripts')
+    @vite(['resources/js/app.js'])
     @auth
         <script>
             document.addEventListener('DOMContentLoaded', () => {
