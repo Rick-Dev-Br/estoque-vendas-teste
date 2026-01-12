@@ -38,9 +38,17 @@
                             <label for="estoque" class="form-label">
                                 <i class="bi bi-box"></i> Estoque Inicial *
                             </label>
-                            <input type="number" class="form-control @error('estoque') is-invalid @enderror"
-                            id="estoque" name="estoque" value="{{ old('estoque', 0) }}"
-                            min="0" required>
+                            <input
+                                type="number"
+                                class="form-control @error('estoque') is-invalid @enderror"
+                                id="estoque"
+                                name="estoque"
+                                value="{{ old('estoque', 0) }}"
+                                min="0"
+                                required
+                                onfocus="if (this.value === '0') this.value = '';"
+                                onblur="if (this.value === '') this.value = '0';">
+
                     @error('estoque')
                             <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
