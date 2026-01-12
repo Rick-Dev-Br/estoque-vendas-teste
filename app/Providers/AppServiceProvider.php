@@ -6,6 +6,7 @@ use App\Models\Produto;
 use App\Models\User;
 use App\Notifications\EstoqueBaixoNotification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -25,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (config('session.driver') === 'database' && !Schema::hasTable('sessions')) {
+            config(['session.driver' => 'file']);
+        }
+
         if (app()->environment('production')) {
             URL::forceScheme('https');
         }
@@ -33,6 +38,10 @@ class AppServiceProvider extends ServiceProvider
             $usuario = Auth::user();
 
             if (!$usuario instanceof User) {
+                return;
+            }
+
+            if (!Schema::hasTable('produtos') || !Schema::hasTable('notifications')) {
                 return;
             }
 
