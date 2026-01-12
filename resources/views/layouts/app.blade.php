@@ -77,8 +77,13 @@
                         @else
                             @php
                                 $usuario = Auth::user();
-                                $notificacoes = $usuario?->notifications()->latest()->take(5)->get() ?? collect();
-                                $notificacoesNaoLidas = $usuario?->unreadNotifications()->count() ?? 0;
+                                $notificacoes = collect();
+                                $notificacoesNaoLidas = 0;
+
+                                if ($usuario && \Illuminate\Support\Facades\Schema::hasTable('notifications')) {
+                                    $notificacoes = $usuario->notifications()->latest()->take(5)->get();
+                                    $notificacoesNaoLidas = $usuario->unreadNotifications()->count();
+                                }
                             @endphp
                             <li class="nav-item dropdown me-2">
                                 <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown"
