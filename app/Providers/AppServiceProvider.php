@@ -6,6 +6,7 @@ use App\Models\Produto;
 use App\Models\User;
 use App\Notifications\EstoqueBaixoNotification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
@@ -45,21 +46,27 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
-            $produtosBaixoEstoque = Produto::whereColumn('estoque', '<=', 'estoque_minimo')
-                ->where('status', 'ativo')
-                ->get(['id', 'nome', 'estoque', 'estoque_minimo']);
+            $produtosBaixoEstoque = Cache::remember('produtos.estoque_baixo', now()->addMinute(), function () {
+                return Produto::whereColumn('estoque', '<=', 'estoque_minimo')
+                    ->where('status', 'ativo')
+                    ->get(['id', 'nome', 'estoque', 'estoque_minimo']);
+            });
 
             if ($produtosBaixoEstoque->isEmpty()) {
                 return;
             }
 
-            $notificacaoRecente = $usuario->notifications()
-                ->where('type', EstoqueBaixoNotification::class)
-                ->where('created_at', '>=', now()->subMinutes(30))
-                ->exists();
+                $cacheKey = "notificacoes.estoque_baixo.{$usuario->id}";
+            $notificacaoRecente = Cache::remember($cacheKey, now()->addMinute(), function () use ($usuario) {
+                return $usuario->notifications()
+                    ->where('type', EstoqueBaixoNotification::class)
+                    ->where('created_at', '>=', now()->subMinutes(30))
+                    ->exists();
+            });
 
             if (!$notificacaoRecente) {
                 $usuario->notify(new EstoqueBaixoNotification($produtosBaixoEstoque->toArray()));
+                Cache::put($cacheKey, true, now()->addMinutes(30));
             }
         });
     }
