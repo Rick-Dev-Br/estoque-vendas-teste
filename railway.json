@@ -4,7 +4,7 @@
         "builder": "NIXPACKS"
     },
     "deploy": {
-        "startCommand": "php artisan config:cache && php artisan view:cache && (php artisan migrate --force || true) && php -S 0.0.0.0:${PORT} -t public",
+        "startCommand": "php artisan config:clear && php artisan view:clear && php artisan config:cache && php artisan view:cache && (php artisan migrate --force || true) && php -S 0.0.0.0:${PORT} -t public",
         "restartPolicyType": "ON_FAILURE",
         "restartPolicyMaxRetries": 10
     }
