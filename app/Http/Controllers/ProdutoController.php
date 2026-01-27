@@ -99,28 +99,27 @@ class ProdutoController extends Controller
      */
     public function update(Request $request, Produto $produto)
     {
-        $validator = Validator::make($request->all(), [
-            'codigo' => 'required|string|max:30|alpha_dash|unique:produtos,codigo,' . $produto->id,
-            'nome' => 'required|string|max:100',
-            'preco' => 'required|numeric|min:0.01',
-            'estoque' => 'required|integer|min:0',
-            'status' => 'required|in:ativo,inativo',
-            'tipo_unidade' => 'required|in:unidade,saco,caixa,pacote',
-            'unidade_medida' => 'required|in:un,kg,l,m',
-            'unidade_quantidade' => 'required|numeric|min:0.01',
-        ]);
+    $validator = Validator::make($request->all(), [
+        'codigo' => 'required|string|max:30|alpha_dash|unique:produtos,codigo,' . $produto->id,
+        'nome' => 'required|string|max:100',
+        'preco' => 'required|numeric|min:0.01',
+        'estoque' => 'required|integer|min:0',
+        'status' => 'required|in:ativo,inativo',
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
+        'tipo_unidade' => 'required|in:unidade,saco,caixa,pacote',
+        'unidade_medida' => 'required|in:un,kg,l,m',
+        'unidade_quantidade' => 'required|numeric|min:0.01',
+    ]);
 
-        $dados = $validator->validated();
-        $dados['unidade_medida'] = strtolower($dados['unidade_medida']);
-        $dados['tipo_unidade'] = strtolower($dados['tipo_unidade']);
+    if ($validator->fails()) {
+        return redirect()->back()->withErrors($validator)->withInput();
+    }
 
-        $produto->update($dados);
+    $dados = $validator->validated();
+    $dados['tipo_unidade'] = strtolower($dados['tipo_unidade']);
+    $dados['unidade_medida'] = strtolower($dados['unidade_medida']);
+
+    $produto->update($dados);
 
         return redirect()->route('produtos.index')
             ->with('success', 'Produto atualizado com sucesso!');

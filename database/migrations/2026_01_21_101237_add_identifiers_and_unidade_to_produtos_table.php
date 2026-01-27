@@ -16,38 +16,32 @@ return new class extends Migration
             if (!Schema::hasColumn('produtos', 'tipo_unidade')) {
                 $table->string('tipo_unidade', 20)->default('unidade')->after('estoque');
             }
-            if (!Schema::hasColumn('produtos', 'unidade_medida')) {
-                $table->enum('unidade_medida', ['un', 'kg', 'l', 'm'])->default('un')->after('tipo_unidade');
-            }
-            if (!Schema::hasColumn('produtos', 'unidade_quantidade')) {
-                $table->decimal('unidade_quantidade', 10, 2)->default(1)->after('unidade_medida');
-            }
         });
 
-        if (Schema::hasColumn('produtos', 'tipo_unidade')) {
+        if (!Schema::hasColumn('produtos', 'unidade_medida')) {
+            Schema::table('produtos', function (Blueprint $table) {
+                $table->enum('unidade_medida', ['un', 'kg', 'l', 'm'])->default('un')->after('tipo_unidade');
+            });
+        }
+
+        if (!Schema::hasColumn('produtos', 'unidade_quantidade')) {
+            Schema::table('produtos', function (Blueprint $table) {
+                $table->decimal('unidade_quantidade', 10, 2)->default(1)->after('unidade_medida');
+            });
+        }
+
             DB::table('produtos')
-                ->whereNull('tipo_unidade')
-                ->update(['tipo_unidade' => 'unidade']);
-        }
+            ->whereNull('tipo_unidade')
+            ->update(['tipo_unidade' => 'unidade']);
 
-        if (Schema::hasColumn('produtos', 'unidade_medida')) {
-            DB::statement("UPDATE produtos SET tipo_unidade = CASE
-                WHEN unidade_medida = 'saco' THEN 'saco'
-                WHEN unidade_medida = 'conjunto' THEN 'pacote'
-                WHEN unidade_medida = 'unidade' THEN 'unidade'
-                ELSE tipo_unidade
-            END");
+            DB::table('produtos')
+            ->whereNull('unidade_medida')
+            ->update(['unidade_medida' => 'un']);
 
-            DB::statement("UPDATE produtos SET unidade_quantidade = unidade_quantidade / 1000 WHERE unidade_medida = 'g'");
-            DB::statement("UPDATE produtos SET unidade_medida = 'kg' WHERE unidade_medida = 'g'");
-            DB::statement("UPDATE produtos SET unidade_medida = 'un' WHERE unidade_medida IN ('unidade', 'saco', 'conjunto')");
 
-            DB::statement("ALTER TABLE produtos MODIFY unidade_medida ENUM('un', 'kg', 'l', 'm') NOT NULL DEFAULT 'un'");
-        }
-
-        if (Schema::hasColumn('produtos', 'unidade_quantidade')) {
-            DB::statement("ALTER TABLE produtos MODIFY unidade_quantidade DECIMAL(10, 2) NOT NULL DEFAULT 1");
-        }
+        DB::table('produtos')
+            ->whereNull('unidade_quantidade')
+            ->update(['unidade_quantidade' => 1]);
     }
 
     /**
@@ -55,12 +49,16 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (Schema::hasColumn('produtos', 'unidade_medida')) {
-            DB::statement("ALTER TABLE produtos MODIFY unidade_medida ENUM('kg', 'g', 'unidade', 'saco', 'conjunto') NOT NULL DEFAULT 'unidade'");
+        if (Schema::hasColumn('produtos', 'unidade_quantidade')) {
+            Schema::table('produtos', function (Blueprint $table) {
+                $table->dropColumn('unidade_quantidade');
+            });
         }
 
-        if (Schema::hasColumn('produtos', 'unidade_quantidade')) {
-            DB::statement("ALTER TABLE produtos MODIFY unidade_quantidade DECIMAL(10, 3) NOT NULL DEFAULT 1");
+        if (Schema::hasColumn('produtos', 'unidade_medida')) {
+            Schema::table('produtos', function (Blueprint $table) {
+                $table->dropColumn('unidade_medida');
+            });
         }
 
         Schema::table('produtos', function (Blueprint $table) {
