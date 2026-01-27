@@ -18,6 +18,12 @@
                     <dt class="col-sm-4">ID</dt>
                     <dd class="col-sm-8">#{{ $produto->id }}</dd>
 
+                    <dt class="col-sm-4">ID público</dt>
+                    <dd class="col-sm-8">{{ $produto->public_id }}</dd>
+
+                    <dt class="col-sm-4">Código (SKU)</dt>
+                    <dd class="col-sm-8">{{ $produto->codigo }}</dd>
+
                     <dt class="col-sm-4">Nome</dt>
                     <dd class="col-sm-8">{{ $produto->nome }}</dd>
 
@@ -26,6 +32,9 @@
 
                     <dt class="col-sm-4">Estoque</dt>
                     <dd class="col-sm-8">{{ $produto->estoque }} unidades</dd>
+
+                    <dt class="col-sm-4">Unidade</dt>
+                    <dd class="col-sm-8">{{ $produto->unidade_descricao }}</dd>
 
                     <dt class="col-sm-4">Status</dt>
                     <dd class="col-sm-8">

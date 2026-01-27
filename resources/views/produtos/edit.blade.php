@@ -16,6 +16,19 @@
                     @method('PUT')
 
                     <div class="mb-3">
+                        <label for="codigo" class="form-label">Código (SKU) *</label>
+                        <input type="text"
+                            class="form-control @error('codigo') is-invalid @enderror"
+                            id="codigo"
+                            name="codigo"
+                            value="{{ old('codigo', $produto->codigo) }}"
+                            required>
+                        @error('codigo')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
                         <label for="nome" class="form-label">Nome *</label>
                         <input type="text"
                             class="form-control @error('nome') is-invalid @enderror"
@@ -59,6 +72,37 @@
                         </div>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="unidade_medida" class="form-label">Unidade de medida *</label>
+                            <select class="form-select @error('unidade_medida') is-invalid @enderror"
+                                name="unidade_medida" id="unidade_medida" required>
+                                @foreach (\App\Models\Produto::UNIDADES as $valor => $rotulo)
+                                    <option value="{{ $valor }}" {{ old('unidade_medida', $produto->unidade_medida) === $valor ? 'selected' : '' }}>
+                                        {{ strtoupper($rotulo) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('unidade_medida')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="unidade_quantidade" class="form-label">Quantidade por unidade *</label>
+                            <input type="number"
+                                class="form-control @error('unidade_quantidade') is-invalid @enderror"
+                                name="unidade_quantidade"
+                                name="unidade_quantidade"
+                                value="{{ old('unidade_quantidade', $produto->unidade_quantidade) }}"
+                                step="0.001"
+                                min="0.001"
+                                required>
+                            @error('unidade_quantidade')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                    </div>
                     <div class="mb-3">
                         <label class="form-label">Status *</label>
                         <div>

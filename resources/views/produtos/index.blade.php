@@ -17,9 +17,11 @@
                 <thead class="table-light">
                     <tr>
                         <th>ID</th>
+                        <th>Código</th>
                         <th>Nome</th>
                         <th>Preço</th>
                         <th>Estoque</th>
+                        <th>Unidade</th>
                         <th>Status</th>
                         <th class="text-center">Ações</th>
                     </tr>
@@ -28,6 +30,7 @@
                     @forelse($produtos as $produto)
                     <tr>
                         <td>#{{ $produto->id }}</td>
+                        <td>{{ $produto->codigo }}</td>
                         <td>{{  $produto->nome }}</td>
                         <td>R$ {{ number_format($produto->preco, 2, ',', '.') }}</td>
                         <td>
@@ -35,6 +38,7 @@
                                 {{ $produto->estoque  }} unidades
                             </span>
                         </td>
+                        <td>{{ $produto->unidade_descricao }}</td>
                         <td>
                             <span class="badge bg-{{ $produto->status_classe  }} status-badge">
                                 {{ $produto->status_formatado }}
@@ -71,7 +75,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-4">
+                        <td colspan="8" class="text-center text-muted py-4">
                             <i class="bi bi-inbox display-6 d-block mb-2"></i>
                             Nenhum produto cadastrado
                         </td>

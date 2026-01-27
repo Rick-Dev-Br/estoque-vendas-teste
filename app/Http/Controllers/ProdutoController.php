@@ -32,15 +32,23 @@ class ProdutoController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'codigo' => 'required|string|max:30|alpha_dash|unique:produtos,codigo',
             'nome' => 'required|string|max:100',
             'preco' => 'required|numeric|min:0.01',
             'estoque' => 'required|integer|min:0',
+            'unidade_medida' => 'required|in:kg,g,unidade,saco,conjunto',
+            'unidade_quantidade' => 'required|numeric|min:0.001',
         ], [
+            'codigo.required' => 'O código do produto é obrigatório.',
+            'codigo.unique' => 'Já existe um produto com esse código.',
             'nome.required' => 'O nome do produto é obrigatório.',
             'preco.required' => 'O preço é obrigatório.',
             'preco.min' => 'O preço deve ser maior que zero.',
             'estoque.required' => 'O estoque é obrigatório.',
             'estoque.min' => 'O estoque não pode ser negativo.',
+            'unidade_medida.required' => 'A unidade de medida é obrigatória.',
+            'unidade_quantidade.required' => 'A quantidade por unidade é obrigatória.',
+            'unidade_quantidade.min' => 'A quantidade por unidade deve ser maior que zero.',
         ]);
 
         if ($validator->fails()) {
@@ -49,7 +57,7 @@ class ProdutoController extends Controller
             ->withInput();
         }
 
-        Produto::create($request->all());
+        Produto::create($validator->validated());
 
         return redirect()->route('produtos.index')
             ->with('success', 'Produto criado com sucesso!');
@@ -86,10 +94,13 @@ class ProdutoController extends Controller
     public function update(Request $request, Produto $produto)
     {
         $validator = Validator::make($request->all(), [
+            'codigo' => 'required|string|max:30|alpha_dash|unique:produtos,codigo,' . $produto->id,
             'nome' => 'required|string|max:100',
             'preco' => 'required|numeric|min:0.01',
             'estoque' => 'required|integer|min:0',
             'status' => 'required|in:ativo,inativo',
+            'unidade_medida' => 'required|in:kg,g,unidade,saco,conjunto',
+            'unidade_quantidade' => 'required|numeric|min:0.001',
         ]);
 
         if ($validator->fails()) {
@@ -98,7 +109,7 @@ class ProdutoController extends Controller
                 ->withInput();
         }
 
-        $produto->update($request->all());
+        $produto->update($validator->validated());
 
         return redirect()->route('produtos.index')
             ->with('success', 'Produto atualizado com sucesso!');
