@@ -66,35 +66,51 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
-                        <label for="unidade_medida" class="form-label">
-                            <i class="bi bi-rulers"></i> Unidade de medida *
-                        </label>
-                        <select class="form-select @error('unidade_medida') id-invalid @enderror"
-                        id="unidade_medida" name="unidade_medida" required>
-                        @foreach (\App\Models\Produto::UNIDADES as $valor => $rotulo)
-                            <option value="{{ $valor }}" {{ old('unidade_medida', 'unidade') === $valor ? 'selected' : '' }}>
-                                {{ strtoupper($rotulo) }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('unidade_medida')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
+                        <div class="col-md-4 mb-3">
+                            <label for="tipo_unidade" class="form-label">
+                                <i class="bi bi-boxes"></i> Tipo de unidade *
+                            </label>
+                            <select class="form-select @error('tipo_unidade') is-invalid @enderror"
+                                id="tipo_unidade" name="tipo_unidade" required>
+                                @foreach (\App\Models\Produto::TIPOS_UNIDADE as $valor => $rotulo)
+                                    <option value="{{ $valor }}" {{ old('tipo_unidade', 'unidade') === $valor ? 'selected' : '' }}>
+                                        {{ $rotulo }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('tipo_unidade')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
+                            <label for="unidade_medida" class="form-label">
+                                <i class="bi bi-rulers"></i> Unidade de medida *
+                            </label>
+                            <select class="form-select @error('unidade_medida') is-invalid @enderror"
+                                id="unidade_medida" name="unidade_medida" required>
+                                @foreach (\App\Models\Produto::UNIDADES_MEDIDA as $valor => $rotulo)
+                                    <option value="{{ $valor }}" {{ old('unidade_medida', 'un') === $valor ? 'selected' : '' }}>
+                                        {{ strtoupper($rotulo) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('unidade_medida')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <label for="unidade_quantidade" class="form-label">
                                 <i class="bi bi-box-seam"></i> Quantidade por unidade *
                             </label>
                             <input type="number"
-                                class="form-control @error('unidade_quantidade') id-invalid @enderror"
+                                class="form-control @error('unidade_quantidade') is-invalid @enderror"
                                 id="unidade_quantidade"
                                 name="unidade_quantidade"
                                 value="{{ old('unidade_quantidade', 1) }}"
-                                step="0.001"
-                                min="0.001"
+                                step="0.01"
+                                min="0.01"
                                 required
-                                placeholder="Ex: 10 para conjunto, 1 para unidade">
+                                placeholder="Ex: 50 (kg por saco), 12 (un por caixa)">
                             @error('unidade_quantidade')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

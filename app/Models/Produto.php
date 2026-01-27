@@ -6,18 +6,24 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use ILLuminate\Support\Str;
+use Illuminate\Support\Str;
 
 class Produto extends Model
 {
     use HasFactory, SoftDeletes;
 
-    public const UNIDADES = [
+    public const TIPOS_UNIDADE = [
+        'unidade' => 'Unidade',
+        'saco' => 'Saco',
+        'caixa' => 'Caixa',
+        'pacote' => 'Pacote',
+    ];
+
+    public const UNIDADES_MEDIDA = [
+        'un' => 'un',
         'kg' => 'kg',
-        'g' => 'g',
-        'unidade' => 'unidade',
-        'saco' => 'saco',
-        'canjunto' => 'conjunto',
+        'l' => 'l',
+        'm' => 'm',
     ];
 
     protected $fillable = [
@@ -26,6 +32,7 @@ class Produto extends Model
         'preco',
         'estoque',
         'status',
+        'tipo_unidade',
         'unidade_medida',
         'unidade_quantidade',
     ];
@@ -33,7 +40,7 @@ class Produto extends Model
     protected $casts = [
         'preco' => 'decimal:2',
         'estoque' => 'integer',
-        'unidade_quantidade' => 'decimal:3',
+        'unidade_quantidade' => 'decimal:2',
     ];
 
     protected static function booted()
@@ -70,20 +77,42 @@ class Produto extends Model
         return $this->status == 'ativo' ? 'success' : 'danger';
     }
 
+    public function getUnidadeFormatadaAttribute()
+    {
+        $tipoUnidade = $this->tipo_unidade ?? 'unidade';
+        $medida = $this->unidade_medida ?? 'un';
+        $quantidade = $this->unidade_quantidade ?? 1;
+        $quantidadeFormatada = $this->formatarQuantidade($quantidade);
+        $tipoFormatado = self::TIPOS_UNIDADE[$tipoUnidade] ?? ucfirst($tipoUnidade);
+
+        return "{$tipoFormatado} ({$quantidadeFormatada} {$medida})";
+    }
+
+        public function getEstoqueConvertidoAttribute(): ?string
+    {
+        $medida = $this->unidade_medida ?? 'un';
+        $quantidade = $this->unidade_quantidade ?? 1;
+
+        if ($medida === 'un' && $quantidade == 1) {
+            return null;
+        }
+
+        $total = ($this->estoque ?? 0) * $quantidade;
+        $totalFormatado = $this->formatarQuantidade($total);
+
+        return "{$totalFormatado} {$medida}";
+    }
+
     public function getUnidadeDescricaoAttribute()
     {
-        $quantidade = $this->unidade_quantidade ?? 1;
-        $quantidadeFormatada = rtrim(rtrim(number_format($quantidade, 3, '.'), ''), '.');
-        $unidade = self::UNIDADES[$this->unidade_media] ?? 'unidade';
+        return $this->unidade_formatada;
+    }
 
-        if ($this->unidade_medida === 'conjunto') {
-            return "Conjunto de {$quantidadeFormatada} itens";
-        }
+    protected function formatarQuantidade($valor): string
+    {
+        $formatado = number_format((float) $valor, 2, '.', '');
 
-        if ($this->unidade_medida === 'unidade' && $quantidade > 1) {
-            return "{$quantidadeFormatada} unidades";
-        }
-        return "{$quantidadeFormatada} {$unidade}";
+        return rtrim(rtrim($formatado, '0'), '.');
     }
 
     /**

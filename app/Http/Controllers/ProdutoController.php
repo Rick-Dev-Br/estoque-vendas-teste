@@ -36,8 +36,9 @@ class ProdutoController extends Controller
             'nome' => 'required|string|max:100',
             'preco' => 'required|numeric|min:0.01',
             'estoque' => 'required|integer|min:0',
-            'unidade_medida' => 'required|in:kg,g,unidade,saco,conjunto',
-            'unidade_quantidade' => 'required|numeric|min:0.001',
+            'tipo_unidade' => 'required|in:unidade,saco,caixa,pacote',
+            'unidade_medida' => 'required|in:un,kg,l,m',
+            'unidade_quantidade' => 'required|numeric|min:0.01',
         ], [
             'codigo.required' => 'O código do produto é obrigatório.',
             'codigo.unique' => 'Já existe um produto com esse código.',
@@ -46,6 +47,7 @@ class ProdutoController extends Controller
             'preco.min' => 'O preço deve ser maior que zero.',
             'estoque.required' => 'O estoque é obrigatório.',
             'estoque.min' => 'O estoque não pode ser negativo.',
+            'tipo_unidade.required' => 'O tipo de unidade é obrigatório.',
             'unidade_medida.required' => 'A unidade de medida é obrigatória.',
             'unidade_quantidade.required' => 'A quantidade por unidade é obrigatória.',
             'unidade_quantidade.min' => 'A quantidade por unidade deve ser maior que zero.',
@@ -57,7 +59,11 @@ class ProdutoController extends Controller
             ->withInput();
         }
 
-        Produto::create($validator->validated());
+        $dados = $validator->validated();
+        $dados['unidade_medida'] = strtolower($dados['unidade_medida']);
+        $dados['tipo_unidade'] = strtolower($dados['tipo_unidade']);
+
+        Produto::create($dados);
 
         return redirect()->route('produtos.index')
             ->with('success', 'Produto criado com sucesso!');
@@ -99,8 +105,9 @@ class ProdutoController extends Controller
             'preco' => 'required|numeric|min:0.01',
             'estoque' => 'required|integer|min:0',
             'status' => 'required|in:ativo,inativo',
-            'unidade_medida' => 'required|in:kg,g,unidade,saco,conjunto',
-            'unidade_quantidade' => 'required|numeric|min:0.001',
+            'tipo_unidade' => 'required|in:unidade,saco,caixa,pacote',
+            'unidade_medida' => 'required|in:un,kg,l,m',
+            'unidade_quantidade' => 'required|numeric|min:0.01',
         ]);
 
         if ($validator->fails()) {
@@ -109,7 +116,11 @@ class ProdutoController extends Controller
                 ->withInput();
         }
 
-        $produto->update($validator->validated());
+        $dados = $validator->validated();
+        $dados['unidade_medida'] = strtolower($dados['unidade_medida']);
+        $dados['tipo_unidade'] = strtolower($dados['tipo_unidade']);
+
+        $produto->update($dados);
 
         return redirect()->route('produtos.index')
             ->with('success', 'Produto atualizado com sucesso!');

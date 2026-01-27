@@ -4,7 +4,6 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 
 return new class extends Migration
 {
@@ -14,39 +13,41 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('produtos', function (Blueprint $table) {
-            if (!Schema::hasColumn('produtos', 'public_id')) {
-                $table->ulid('public_id')->nullable()->unique()->after('id');
-            }
-            if (!Schema::hasColumn('produtos', 'codigo')) {
-                $table->string('codigo', 30)->nullable()->unique()->after('public_id');
+            if (!Schema::hasColumn('produtos', 'tipo_unidade')) {
+                $table->string('tipo_unidade', 20)->default('unidade')->after('estoque');
             }
             if (!Schema::hasColumn('produtos', 'unidade_medida')) {
-                $table->enum('unidade_medida', ['kg', 'g', 'unidade', 'saco', 'conjunto'])
-                    ->default('unidade')
-                    ->after('estoque');
+                $table->enum('unidade_medida', ['un', 'kg', 'l', 'm'])->default('un')->after('tipo_unidade');
             }
             if (!Schema::hasColumn('produtos', 'unidade_quantidade')) {
-                $table->decimal('unidade_quantidade', 10, 3)->default(1)->after('unidade_medida');
+                $table->decimal('unidade_quantidade', 10, 2)->default(1)->after('unidade_medida');
             }
         });
 
-        DB::table('produtos')
-            ->whereNull('public_id')
-            ->orderBy('id')
-            ->chunkById(100, function ($produtos) {
-                foreach ($produtos as $produto) {
-                    $codigo = $produto->codigo ?: sprintf('PRD-%06d', $produto->id);
+        if (Schema::hasColumn('produtos', 'tipo_unidade')) {
+            DB::table('produtos')
+                ->whereNull('tipo_unidade')
+                ->update(['tipo_unidade' => 'unidade']);
+        }
 
-                    DB::table('produtos')
-                        ->where('id', $produto->id)
-                        ->update([
-                            'public_id' => (string) Str::ulid(),
-                            'codigo' => $codigo,
-                            'unidade_medida' => $produto->unidade_medida ?? 'unidade',
-                            'unidade_quantidade' => $produto->unidade_quantidade ?? 1,
-                        ]);
-                }
-            });
+        if (Schema::hasColumn('produtos', 'unidade_medida')) {
+            DB::statement("UPDATE produtos SET tipo_unidade = CASE
+                WHEN unidade_medida = 'saco' THEN 'saco'
+                WHEN unidade_medida = 'conjunto' THEN 'pacote'
+                WHEN unidade_medida = 'unidade' THEN 'unidade'
+                ELSE tipo_unidade
+            END");
+
+            DB::statement("UPDATE produtos SET unidade_quantidade = unidade_quantidade / 1000 WHERE unidade_medida = 'g'");
+            DB::statement("UPDATE produtos SET unidade_medida = 'kg' WHERE unidade_medida = 'g'");
+            DB::statement("UPDATE produtos SET unidade_medida = 'un' WHERE unidade_medida IN ('unidade', 'saco', 'conjunto')");
+
+            DB::statement("ALTER TABLE produtos MODIFY unidade_medida ENUM('un', 'kg', 'l', 'm') NOT NULL DEFAULT 'un'");
+        }
+
+        if (Schema::hasColumn('produtos', 'unidade_quantidade')) {
+            DB::statement("ALTER TABLE produtos MODIFY unidade_quantidade DECIMAL(10, 2) NOT NULL DEFAULT 1");
+        }
     }
 
     /**
@@ -54,20 +55,17 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (Schema::hasColumn('produtos', 'unidade_medida')) {
+            DB::statement("ALTER TABLE produtos MODIFY unidade_medida ENUM('kg', 'g', 'unidade', 'saco', 'conjunto') NOT NULL DEFAULT 'unidade'");
+        }
+
+        if (Schema::hasColumn('produtos', 'unidade_quantidade')) {
+            DB::statement("ALTER TABLE produtos MODIFY unidade_quantidade DECIMAL(10, 3) NOT NULL DEFAULT 1");
+        }
+
         Schema::table('produtos', function (Blueprint $table) {
-            if (Schema::hasColumn('produtos', 'public_id')) {
-                $table->dropUnique(['public_id']);
-                $table->dropColumn('public_id');
-            }
-            if (Schema::hasColumn('produtos', 'codigo')) {
-                $table->dropUnique(['codigo']);
-                $table->dropColumn('codigo');
-            }
-            if (Schema::hasColumn('produtos', 'unidade_medida')) {
-                $table->dropColumn('unidade_medida');
-            }
-            if (Schema::hasColumn('produtos', 'unidade_quantidade')) {
-                $table->dropColumn('unidade_quantidade');
+            if (Schema::hasColumn('produtos', 'tipo_unidade')) {
+                $table->dropColumn('tipo_unidade');
             }
         });
     }

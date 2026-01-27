@@ -31,10 +31,15 @@
                     <dd class="col-sm-8">R$ {{ number_format($produto->preco, 2, ',', '.') }}</dd>
 
                     <dt class="col-sm-4">Estoque</dt>
-                    <dd class="col-sm-8">{{ $produto->estoque }} unidades</dd>
+                    <dd class="col-sm-8">
+                        {{ $produto->estoque }} {{ \Illuminate\Support\Str::plural($produto->tipo_unidade ?? 'unidade', $produto->estoque) }}
+                        @if ($produto->estoque_convertido)
+                            <span class="text-muted">({{ $produto->estoque_convertido }})</span>
+                        @endif
+                    </dd>
 
                     <dt class="col-sm-4">Unidade</dt>
-                    <dd class="col-sm-8">{{ $produto->unidade_descricao }}</dd>
+                    <dd class="col-sm-8">{{ $produto->unidade_formatada }}</dd>
 
                     <dt class="col-sm-4">Status</dt>
                     <dd class="col-sm-8">

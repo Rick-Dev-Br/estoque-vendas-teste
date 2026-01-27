@@ -35,10 +35,15 @@
                         <td>R$ {{ number_format($produto->preco, 2, ',', '.') }}</td>
                         <td>
                             <span class="{{ $produto->estoque > 0 ? 'text-success' : 'text-danger' }}">
-                                {{ $produto->estoque  }} unidades
+                                {{ $produto->estoque }} {{ \Illuminate\Support\Str::plural($produto->tipo_unidade ?? 'unidade', $produto->estoque) }}
                             </span>
+                            @if ($produto->estoque_convertido)
+                                <div class="small text-muted">
+                                    ({{ $produto->estoque_convertido }})
+                                </div>
+                            @endif
                         </td>
-                        <td>{{ $produto->unidade_descricao }}</td>
+                        <td>{{ $produto->unidade_formatada }}</td>
                         <td>
                             <span class="badge bg-{{ $produto->status_classe  }} status-badge">
                                 {{ $produto->status_formatado }}
