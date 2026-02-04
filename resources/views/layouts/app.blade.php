@@ -347,10 +347,17 @@
                     }
                 });
 
-                dropdown.addEventListener('shown.bs.dropdown', atualizarNotificacoes);
+                let notificacoesIniciadas = false;
+                let intervaloNotificacoes = null;
 
-                atualizarNotificacoes();
-                setInterval(atualizarNotificacoes, 300000);
+                dropdown.addEventListener('shown.bs.dropdown', () => {
+                    atualizarNotificacoes();
+
+                    if (!notificacoesIniciadas) {
+                        intervaloNotificacoes = setInterval(atualizarNotificacoes, 300000);
+                        notificacoesIniciadas = true;
+                    }
+                });
             });
         </script>
     @endauth
