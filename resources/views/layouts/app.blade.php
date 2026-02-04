@@ -76,39 +76,38 @@
                             </li>
                         @else
                             @php
-                                $usuario = Auth::user();
-                                $estoqueBaixo = collect();
-                                $estoqueBaixoTotal = 0;
-
-                                    if ($usuario && \Illuminate\Support\Facades\Schema::hasTable('produtos')) {
-                                    $estoqueBaixo = \App\Models\Produto::estoqueBaixo()
-                                        ->orderBy('estoque')
-                                        ->limit(5)
-                                        ->get(['id', 'nome', 'estoque', 'estoque_minimo']);
-                                    $estoqueBaixoTotal = \App\Models\Produto::estoqueBaixo()->count();
-                                }
+                                $notificacoesLista = $notificacoes ?? collect();
+                                $notificacoesTotal = $notificacoesNaoLidas ?? 0;
                             @endphp
                             <li class="nav-item dropdown me-2">
                                 <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown"
                                     id="notificationDropdown" data-notifications-url="{{ route('notificacoes.estoque-baixo') }}">
                                     <i class="bi bi-bell-fill"></i>
-                                    @if($estoqueBaixoTotal > 0)
+                                    @if($notificacoesTotal > 0)
                                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                                             id="notification-badge">
-                                            {{ $estoqueBaixoTotal }}
+                                            {{ $notificacoesTotal }}
                                         </span>
                                     @endif
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-end p-2" style="min-width: 320px;">
                                     <h6 class="dropdown-header">Estoque baixo</h6>
                                     <div id="estoque-baixo-lista">
-                                        @forelse($estoqueBaixo as $produto)
-                                            <div class="px-2 py-2 border-bottom notification-item">
-                                                <div class="fw-semibold">{{ $produto->nome }}</div>
-                                                <div class="small text-muted">
-                                                    Estoque: {{ $produto->estoque }} / Mínimo: {{ $produto->estoque_minimo }}
+                                        @forelse($notificacoesLista as $notificacao)
+                                            <div class="px-2 py-2 border-bottom notification-item" data-notification-id="{{ $notificacao->id }}">
+                                                <div class="fw-semibold">
+                                                    {{ $notificacao->data['titulo'] ?? 'Produtos com estoque baixo' }}
                                                 </div>
-                                                <a href="{{ route('produtos.edit', $produto) }}" class="small">Editar produto</a>
+                                                @forelse($notificacao->data['produtos'] ?? [] as $produto)
+                                                    <div class="small text-muted">
+                                                        {{ $produto['nome'] ?? 'Produto' }} — Estoque: {{ $produto['estoque'] ?? '-' }} / Mínimo: {{ $produto['estoque_minimo'] ?? '-' }}
+                                                    </div>
+                                                    @if(!empty($produto['id']))
+                                                        <a href="{{ route('produtos.edit', $produto['id']) }}" class="small">Editar produto</a>
+                                                    @endif
+                                                @empty
+                                                    <div class="small text-muted">Nenhum detalhe disponível.</div>
+                                                @endforelse
                                             </div>
                                             @empty
                                             <div class="px-3 py-2 text-muted small">Nenhum produto com estoque baixo.</div>
@@ -188,11 +187,59 @@
             document.addEventListener('DOMContentLoaded', () => {
                 const dropdown = document.getElementById('notificationDropdown');
                 const lista = document.getElementById('estoque-baixo-lista');
-                const badge = document.getElementById('notification-badge');
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 
                 if (!dropdown) {
                     return;
                 }
+
+                const limparNotificacoes = () => {
+                    lista.innerHTML = '';
+                    const item = document.createElement('div');
+                    item.className = 'px-3 py-2 text-muted small';
+                    item.textContent = 'Nenhum produto com estoque baixo.';
+                    lista.appendChild(item);
+                };
+
+                const atualizarBadge = (total) => {
+                    const badge = document.getElementById('notification-badge');
+                    if (total > 0) {
+                        if (badge) {
+                            badge.textContent = total;
+                            return;
+                        }
+
+                        const newBadge = document.createElement('span');
+                        newBadge.id = 'notification-badge';
+                        newBadge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                        newBadge.textContent = total;
+                        dropdown.appendChild(newBadge);
+                        return;
+                    }
+
+                    if (badge) {
+                        badge.remove();
+                    }
+                };
+
+                const marcarNotificacoesComoLidas = async () => {
+                    if (!csrfToken) {
+                        return;
+                    }
+
+                    try {
+                        await fetch("{{ route('notificacoes.ler') }}", {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            },
+                            keepalive: true
+                        });
+                    } catch (error) {
+                        console.error('Falha ao marcar notificações como lidas.', error);
+                    }
+                };
 
                 const atualizarNotificacoes = async () => {
                     const url = dropdown.dataset.notificationsUrl;
@@ -213,38 +260,37 @@
 
                         const data = await response.json();
                         const total = Number(data.total || 0);
-                        const produtos = Array.isArray(data.produtos) ? data.produtos : [];
+                        const notificacoes = Array.isArray(data.notificacoes) ? data.notificacoes : [];
 
-                        if (badge) {
-                            if (total > 0) {
-                                badge.textContent = total;
-                            } else {
-                                badge.remove();
-                            }
-                        } else if (total > 0) {
-                            const newBadge = document.createElement('span');
-                            newBadge.id = 'notification-badge';
-                            newBadge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
-                            newBadge.textContent = total;
-                            dropdown.appendChild(newBadge);
-                        }
+                        atualizarBadge(total);
 
                         lista.innerHTML = '';
-                        if (produtos.length === 0) {
-                            const item = document.createElement('div');
-                            item.className = 'px-3 py-2 text-muted small';
-                            item.textContent = 'Nenhum produto com estoque baixo.';
-                            lista.appendChild(item);
+                        if (notificacoes.length === 0) {
+                            limparNotificacoes();
                             return;
                         }
 
-                        produtos.forEach((produto) => {
+                        notificacoes.forEach((notificacao) => {
                             const item = document.createElement('div');
                             item.className = 'px-2 py-2 border-bottom notification-item';
+                            const produtos = Array.isArray(notificacao.produtos) ? notificacao.produtos : [];
+                            const titulo = notificacao.titulo || 'Produtos com estoque baixo';
+                            const linhasProdutos = produtos.length
+                                ? produtos.map((produto) => {
+                                    const nome = produto.nome || 'Produto';
+                                    const estoque = produto.estoque ?? '-';
+                                    const minimo = produto.estoque_minimo ?? '-';
+                                    const link = produto.id ? `<a href="/produtos/${produto.id}/edit" class="small">Editar produto</a>` : '';
+                                    return `
+                                        <div class="small text-muted">${nome} — Estoque: ${estoque} / Mínimo: ${minimo}</div>
+                                        ${link}
+                                    `;
+                                }).join('')
+                                : '<div class="small text-muted">Nenhum detalhe disponível.</div>';
+
                             item.innerHTML = `
-                                <div class="fw-semibold">${produto.nome}</div>
-                                <div class="small text-muted">Estoque: ${produto.estoque} / Mínimo: ${produto.estoque_minimo}</div>
-                                <a href="/produtos/${produto.id}/edit" class="small">Editar produto</a>
+                                <div class="fw-semibold">${titulo}</div>
+                                ${linhasProdutos}
                             `;
                             lista.appendChild(item);
                         });
@@ -252,6 +298,17 @@
                         console.error('Falha ao atualizar notificações de estoque baixo.', error);
                     }
                 };
+
+                lista?.addEventListener('click', (event) => {
+                    const item = event.target.closest('.notification-item');
+                    if (!item) {
+                        return;
+                    }
+
+                    marcarNotificacoesComoLidas();
+                    atualizarBadge(0);
+                    limparNotificacoes();
+                });
 
                 dropdown.addEventListener('shown.bs.dropdown', atualizarNotificacoes);
 

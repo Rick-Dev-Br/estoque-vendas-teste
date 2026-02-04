@@ -43,6 +43,16 @@ body {
     box-shadow: 0 0 0 0.2rem rgba(76, 111, 255, 0.2);
 }
 
+.form-check-input {
+    border-color: var(--app-border);
+    background-color: #ffffff;
+}
+
+.form-check-input:checked {
+    background-color: var(--app-focus);
+    border-color: var(--app-focus);
+}
+
 .btn-primary {
     box-shadow: 0 6px 16px rgba(13, 110, 253, 0.25);
 }
