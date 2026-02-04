@@ -67,6 +67,12 @@ class Produto extends Model
         return $query->where('estoque', '>', 0);
     }
 
+    public function scopeEstoqueBaixo($query)
+    {
+        return $query->whereColumn('estoque', '<=', 'estoque_minimo')
+            ->where('status', 'ativo');
+    }
+
     public function getStatusFormatadoAttribute()
     {
         return $this->status == 'ativo' ? 'Ativo' : 'Inativo';

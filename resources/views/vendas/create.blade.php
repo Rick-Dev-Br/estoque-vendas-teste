@@ -22,7 +22,15 @@
                                 <option value="">Selecione um cliente</option>
                                 @foreach($clientes as $cliente)
                                     @if($cliente->status == 'ativo')
-                                    <option value="{{ $cliente->id }}" {{ old('cliente_id') == $cliente->id ? 'selected' : '' }}>
+                                    <option value="{{ $cliente->id }}"
+                                        data-endereco="{{ $cliente->endereco }}"
+                                        data-numero="{{ $cliente->numero }}"
+                                        data-complemento="{{ $cliente->complemento }}"
+                                        data-bairro="{{ $cliente->bairro }}"
+                                        data-cidade="{{ $cliente->cidade }}"
+                                        data-estado="{{ $cliente->estado }}"
+                                        data-cep="{{ $cliente->cep }}"
+                                        {{ old('cliente_id') == $cliente->id ? 'selected' : '' }}>
                                         {{ $cliente->nome }}
                                     </option>
                                     @endif
@@ -53,6 +61,32 @@
                     </div>
 
                     <div class="row">
+                        <div class="col-12 mb-3">
+                            <label class="form-label d-block">Endereço de entrega</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="usar_endereco_cliente"
+                                    id="usar_endereco_cliente_sim" value="1"
+                                    {{ old('usar_endereco_cliente', '1') == '1' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="usar_endereco_cliente_sim">
+                                    Usar endereço do cliente (padrão)
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="usar_endereco_cliente"
+                                    id="usar_endereco_cliente_nao" value="0"
+                                    {{ old('usar_endereco_cliente') == '0' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="usar_endereco_cliente_nao">
+                                    Informar outro endereço de entrega
+                                </label>
+                            </div>
+                            @error('usar_endereco_cliente')
+                                <div class="text-danger small">{{ $message }}</div>
+                            @enderror
+                            <div id="endereco-cliente-resumo" class="text-muted small mt-2 d-none"></div>
+                        </div>
+                    </div>
+
+                    <div class="row" id="endereco-personalizado">
                         <div class="col-md-6 mb-3">
                             <label for="endereco_entrega" class="form-label">Endereço de entrega</label>
                             <input type="text" class="form-control @error('endereco_entrega') is-invalid @enderror"
@@ -138,7 +172,8 @@
                                 </div>
                                 <div class="col-md-3">
                                     <input type="number" class="form-control quantidade"
-                                        name="itens[0][quantidade]" min="1" value="1" required>
+                                        name="itens[0][quantidade]" min="1" value="1" required
+                                        data-clear-on-focus="1">
                                 </div>
                                 <div class="col-md-3">
                                     <button type="button" class="btn btn-danger btn-remover" style="display: none;">
@@ -176,6 +211,92 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let produtoCount = 1;
+    const usarEnderecoInputs = document.querySelectorAll('input[name="usar_endereco_cliente"]');
+    const enderecoContainer = document.getElementById('endereco-personalizado');
+    const resumoEndereco = document.getElementById('endereco-cliente-resumo');
+    const clienteSelect = document.getElementById('cliente_id');
+    const enderecoCampos = {
+        endereco_entrega: document.getElementById('endereco_entrega'),
+        numero: document.getElementById('numero'),
+        complemento: document.getElementById('complemento'),
+        bairro: document.getElementById('bairro'),
+        cidade: document.getElementById('cidade'),
+        estado: document.getElementById('estado'),
+        cep: document.getElementById('cep'),
+    };
+
+    const obterEnderecoCliente = () => {
+        const option = clienteSelect?.selectedOptions[0];
+        if (!option) {
+            return null;
+        }
+
+        return {
+            endereco: option.dataset.endereco || '',
+            numero: option.dataset.numero || '',
+            complemento: option.dataset.complemento || '',
+            bairro: option.dataset.bairro || '',
+            cidade: option.dataset.cidade || '',
+            estado: option.dataset.estado || '',
+            cep: option.dataset.cep || '',
+        };
+    };
+
+    const atualizarResumoEndereco = () => {
+        if (!resumoEndereco) {
+            return;
+        }
+
+        const endereco = obterEnderecoCliente();
+        if (!endereco || !endereco.endereco) {
+            resumoEndereco.textContent = 'Selecione um cliente para usar o endereço padrão.';
+            resumoEndereco.classList.remove('d-none');
+            return;
+        }
+
+        const complemento = endereco.complemento ? `, ${endereco.complemento}` : '';
+        resumoEndereco.textContent = `${endereco.endereco}, ${endereco.numero || 's/n'}${complemento} - ${endereco.bairro || ''} - ${endereco.cidade || ''}/${endereco.estado || ''} (${endereco.cep || ''})`;
+        resumoEndereco.classList.remove('d-none');
+    };
+
+    const aplicarEnderecoCliente = () => {
+        const endereco = obterEnderecoCliente();
+        if (!endereco) {
+            return;
+        }
+        enderecoCampos.endereco_entrega.value = endereco.endereco;
+        enderecoCampos.numero.value = endereco.numero;
+        enderecoCampos.complemento.value = endereco.complemento;
+        enderecoCampos.bairro.value = endereco.bairro;
+        enderecoCampos.cidade.value = endereco.cidade;
+        enderecoCampos.estado.value = endereco.estado;
+        enderecoCampos.cep.value = endereco.cep;
+    };
+
+    const alternarEndereco = () => {
+        const usarCliente = document.querySelector('input[name="usar_endereco_cliente"]:checked')?.value === '1';
+        if (enderecoContainer) {
+            enderecoContainer.style.display = usarCliente ? 'none' : '';
+        }
+        if (usarCliente) {
+            aplicarEnderecoCliente();
+            atualizarResumoEndereco();
+        } else if (resumoEndereco) {
+            resumoEndereco.classList.add('d-none');
+        }
+    };
+
+    usarEnderecoInputs.forEach((input) => {
+        input.addEventListener('change', alternarEndereco);
+    });
+
+    clienteSelect?.addEventListener('change', () => {
+        const usarCliente = document.querySelector('input[name="usar_endereco_cliente"]:checked')?.value === '1';
+        if (usarCliente) {
+            aplicarEnderecoCliente();
+            atualizarResumoEndereco();
+        }
+    });
 
     document.getElementById('btn-adicionar-produto').addEventListener('click', function() {
         const container = document.getElementById('produtos-container');
@@ -211,6 +332,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    alternarEndereco();
 });
 </script>
 @endpush

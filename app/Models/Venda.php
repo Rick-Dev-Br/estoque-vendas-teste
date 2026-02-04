@@ -16,6 +16,7 @@ class Venda extends Model
         'status',
         'data_compra',
         'forma_pagamento',
+        'usar_endereco_cliente',
         'endereco_entrega',
         'numero',
         'complemento',

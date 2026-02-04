@@ -41,13 +41,14 @@ class VendaController extends Controller
             'cliente_id' => 'required|exists:clientes,id',
             'forma_pagamento' => 'nullable|string|max:30',
             'data_compra' => 'nullable|date',
-            'endereco_entrega' => 'nullable|string|max:255',
-            'numero' => 'nullable|string|max:20',
+            'usar_endereco_cliente' => 'required|boolean',
+            'endereco_entrega' => 'required_if:usar_endereco_cliente,0|string|max:255',
+            'numero' => 'required_if:usar_endereco_cliente,0|string|max:20',
             'complemento' => 'nullable|string|max:100',
-            'bairro' => 'nullable|string|max:100',
-            'cidade' => 'nullable|string|max:100',
-            'estado' => 'nullable|string|size:2',
-            'cep' => 'nullable|string|max:15',
+            'bairro' => 'required_if:usar_endereco_cliente,0|string|max:100',
+            'cidade' => 'required_if:usar_endereco_cliente,0|string|max:100',
+            'estado' => 'required_if:usar_endereco_cliente,0|string|size:2',
+            'cep' => 'required_if:usar_endereco_cliente,0|string|max:15',
             'itens' => 'required|array|min:1',
             'itens.*.produto_id' => 'required|exists:produtos,id',
             'itens.*.quantidade' => 'required|integer|min:1',
@@ -62,6 +63,28 @@ class VendaController extends Controller
         DB::beginTransaction();
 
         try {
+            $cliente = Cliente::findOrFail($request->cliente_id);
+            $usarEnderecoCliente = $request->boolean('usar_endereco_cliente');
+            $enderecoData = $usarEnderecoCliente
+                ?[
+                    'endereco_entrega' => $cliente->endereco,
+                    'numero' => $cliente->numero,
+                    'complemento' => $cliente->complemento,
+                    'bairro' => $cliente->bairro,
+                    'cidade' => $cliente->cidade,
+                    'estado' => $cliente->estado,
+                    'cep' => $cliente->cep,
+                ]
+                : [
+                    'endereco_entrega' => $request->endereco_entrega,
+                    'numero' => $request->numero,
+                    'complemento' => $request->bairro->complemento,
+                    'bairro' => $request->bairro,
+                    'cidade' => $request->cidade,
+                    'estado' => $request->estado,
+                    'cep' => $request->cep,
+                ];
+
             $total = 0;
             $itensData = [];
 
@@ -90,16 +113,16 @@ class VendaController extends Controller
                 'cliente_id' => $request->cliente_id,
                 'total' => $total,
                 'status' => 'pendente',
-                'status' => 'pendente',
                 'forma_pagamento' => $request->forma_pagamento,
                 'data_compra' => $request->data_compra,
-                'endereco_entrega' => $request->endereco_entrega,
-                'numero' => $request->numero,
-                'complemento' => $request->complemento,
-                'bairro' => $request->bairro,
-                'cidade' => $request->cidade,
-                'estado' => $request->estado,
-                'cep' => $request->cep,
+                'usar_endereco_cliente' => $usarEnderecoCliente,
+                'endereco_entrega' => $enderecoData['endereco_entrega'],
+                'numero' => $enderecoData['numero'],
+                'complemento' => $enderecoData['complemento'],
+                'bairro' => $enderecoData['bairro'],
+                'cidade' => $enderecoData['cidade'],
+                'estado' => $enderecoData['estado'],
+                'cep' => $enderecoData['cep'],
             ]);
 
             foreach ($itensData as $itemData) {
@@ -160,17 +183,18 @@ class VendaController extends Controller
             abort(403, 'Só é possível editar vendas pendentes.');
         }
 
-        $data = $request->validate([
+        $request->validate([
             'cliente_id' => ['required','exists:clientes,id'],
             'forma_pagamento' => ['nullable','string','max:30'],
             'data_compra' => ['nullable','date'],
-            'endereco_entrega' => ['nullable','string','max:255'],
-            'numero' => ['nullable','string','max:20'],
+            'usar_endereco_cliente' => ['required','boolean'],
+            'endereco_entrega' => ['required_if:usar_endereco_cliente,0','string','max:255'],
+            'numero' => ['required_if:usar_endereco_cliente,0','string','max:20'],
             'complemento' => ['nullable','string','max:100'],
-            'bairro' => ['nullable','string','max:100'],
-            'cidade' => ['nullable','string','max:100'],
-            'estado' => ['nullable','string','size:2'],
-            'cep' => ['nullable','string','max:15'],
+            'bairro' => ['required_if:usar_endereco_cliente,0','string','max:100'],
+            'cidade' => ['required_if:usar_endereco_cliente,0','string','max:100'],
+            'estado' => ['required_if:usar_endereco_cliente,0','string','size:2'],
+            'cep' => ['required_if:usar_endereco_cliente,0','string','max:15'],
             'itens' => 'required|array|min:1',
             'itens.*.produto_id' => 'required|exists:produtos,id',
             'itens.*.quantidade' => 'required|integer|min:1',
@@ -179,6 +203,28 @@ class VendaController extends Controller
         DB::beginTransaction();
 
         try {
+            $cliente = Cliente::findOrFail($request->cliente_id);
+            $usarEnderecoCliente = $request->boolean('usar_endereco_cliente');
+            $enderecoData = $usarEnderecoCliente
+                ? [
+                    'endereco_entrega' => $cliente->endereco,
+                    'numero' => $cliente->numero,
+                    'complemento' => $cliente->complemento,
+                    'bairro' => $cliente->bairro,
+                    'cidade' => $cliente->cidade,
+                    'estado' => $cliente->estado,
+                    'cep' => $cliente->cep,
+                ]
+                : [
+                    'endereco_entrega' => $request->endereco_entrega,
+                    'numero' => $request->numero,
+                    'complemento' => $request->complemento,
+                    'bairro' => $request->bairro,
+                    'cidade' => $request->cidade,
+                    'estado' => $request->estado,
+                    'cep' => $request->cep,
+                ];
+
             // Remove old items
             $venda->itens()->delete();
 
@@ -211,13 +257,14 @@ class VendaController extends Controller
                 'total' => $total,
                 'forma_pagamento' => $request->forma_pagamento,
                 'data_compra' => $request->data_compra,
-                'endereco_entrega' => $request->endereco_entrega,
-                'numero' => $request->numero,
-                'complemento' => $request->complemento,
-                'bairro' => $request->bairro,
-                'cidade' => $request->cidade,
-                'estado' => $request->estado,
-                'cep' => $request->cep,
+                'usar_endereco_cliente' => $usarEnderecoCliente,
+                'endereco_entrega' => $enderecoData['endereco_entrega'],
+                'numero' => $enderecoData['numero'],
+                'complemento' => $enderecoData['complemento'],
+                'bairro' => $enderecoData['bairro'],
+                'cidade' => $enderecoData['cidade'],
+                'estado' => $enderecoData['estado'],
+                'cep' => $enderecoData['cep'],
             ]);
 
             // crate new items

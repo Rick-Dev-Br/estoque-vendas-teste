@@ -22,6 +22,11 @@
                     {{ $venda->endereco_entrega ?? '---' }},
                     {{ $venda->numero ?? '' }} - {{ $venda->bairro ?? '' }} - {{ $venda->cidade ?? '' }}/{{ $venda->estado ?? '' }}
                     ({{ $venda->cep ?? '' }})
+                    @if($venda->usar_endereco_cliente)
+                        <span class="badge bg-light text-dark ms-2">Padrão do cliente</span>
+                    @else
+                        <span class="badge bg-light text-dark ms-2">Endereço informado na venda</span>
+                    @endif
                 </p>
 
                 <table class="table table-sm">

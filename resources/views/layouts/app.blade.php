@@ -77,50 +77,44 @@
                         @else
                             @php
                                 $usuario = Auth::user();
-                                $notificacoes = collect();
-                                $notificacoesNaoLidas = 0;
+                                $estoqueBaixo = collect();
+                                $estoqueBaixoTotal = 0;
 
-                                if ($usuario && \Illuminate\Support\Facades\Schema::hasTable('notifications')) {
-                                    $notificacoes = $usuario->notifications()->latest()->take(5)->get();
-                                    $notificacoesNaoLidas = $usuario->unreadNotifications()->count();
+                                    if ($usuario && \Illuminate\Support\Facades\Schema::hasTable('produtos')) {
+                                    $estoqueBaixo = \App\Models\Produto::estoqueBaixo()
+                                        ->orderBy('estoque')
+                                        ->limit(5)
+                                        ->get(['id', 'nome', 'estoque', 'estoque_minimo']);
+                                    $estoqueBaixoTotal = \App\Models\Produto::estoqueBaixo()->count();
                                 }
                             @endphp
                             <li class="nav-item dropdown me-2">
                                 <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown"
-                                    id="notificationDropdown" data-notifications-read-url="{{ route('notificacoes.ler') }}">
+                                    id="notificationDropdown" data-notifications-url="{{ route('notificacoes.estoque-baixo') }}">
                                     <i class="bi bi-bell-fill"></i>
-                                    @if($notificacoesNaoLidas > 0)
+                                    @if($estoqueBaixoTotal > 0)
                                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                                             id="notification-badge">
-                                            {{ $notificacoesNaoLidas }}
+                                            {{ $estoqueBaixoTotal }}
                                         </span>
                                     @endif
                                 </a>
-                                <ul class="dropdown-menu dropdown-menu-end p-2" style="min-width: 320px;">
-                                    <li class="dropdown-header">Notificações</li>
-                                    @forelse($notificacoes as $notificacao)
-                                        <li class="px-2 py-2 border-bottom notification-item {{ $notificacao->read_at ? 'text-muted' : '' }}">
-                                            <div class="small text-muted">
-                                                {{ $notificacao->created_at->diffForHumans() }}
+                                <div class="dropdown-menu dropdown-menu-end p-2" style="min-width: 320px;">
+                                    <h6 class="dropdown-header">Estoque baixo</h6>
+                                    <div id="estoque-baixo-lista">
+                                        @forelse($estoqueBaixo as $produto)
+                                            <div class="px-2 py-2 border-bottom notification-item">
+                                                <div class="fw-semibold">{{ $produto->nome }}</div>
+                                                <div class="small text-muted">
+                                                    Estoque: {{ $produto->estoque }} / Mínimo: {{ $produto->estoque_minimo }}
+                                                </div>
+                                                <a href="{{ route('produtos.edit', $produto) }}" class="small">Editar produto</a>
                                             </div>
-                                            <div class="fw-semibold">
-                                                {{ $notificacao->data['titulo'] ?? 'Atualização' }}
-                                            </div>
-                                            @if(!empty($notificacao->data['produtos']))
-                                                <ul class="mb-0 ps-3">
-                                                    @foreach($notificacao->data['produtos'] as $produto)
-                                                        <li class="small">
-                                                            {{ $produto['nome'] ?? 'Produto' }}
-                                                            ({{ $produto['estoque'] ?? 0 }}/{{ $produto['estoque_minimo'] ?? 0 }})
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
-                                            @endif
-                                        </li>
-                                    @empty
-                                        <li class="px-3 py-2 text-muted small">Nenhuma notificação no momento.</li>
-                                    @endforelse
-                                </ul>
+                                            @empty
+                                            <div class="px-3 py-2 text-muted small">Nenhum produto com estoque baixo.</div>
+                                        @endforelse
+                                    </div>
+                                </div>
                             </li>
                                 <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button"
@@ -193,38 +187,75 @@
         <script>
             document.addEventListener('DOMContentLoaded', () => {
                 const dropdown = document.getElementById('notificationDropdown');
+                const lista = document.getElementById('estoque-baixo-lista');
+                const badge = document.getElementById('notification-badge');
+
                 if (!dropdown) {
                     return;
                 }
 
-                dropdown.addEventListener('shown.bs.dropdown', async () => {
-                    const badge = document.getElementById('notification-badge');
-                    if (!badge) {
+                const atualizarNotificacoes = async () => {
+                    const url = dropdown.dataset.notificationsUrl;
+                    if (!url || !lista) {
                         return;
                     }
 
-                    const url = dropdown.dataset.notificationsReadUrl;
-                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
                     try {
                         const response = await fetch(url, {
-                            method: 'POST',
                             headers: {
-                                'X-CSRF-TOKEN': token,
                                 'Accept': 'application/json'
                             }
                         });
 
-                        if (response.ok) {
-                            badge.remove();
-                            document.querySelectorAll('.notification-item').forEach(item => {
-                                item.classList.add('text-muted');
-                            });
+                        if (!response.ok) {
+                            return;
                         }
+
+                        const data = await response.json();
+                        const total = Number(data.total || 0);
+                        const produtos = Array.isArray(data.produtos) ? data.produtos : [];
+
+                        if (badge) {
+                            if (total > 0) {
+                                badge.textContent = total;
+                            } else {
+                                badge.remove();
+                            }
+                        } else if (total > 0) {
+                            const newBadge = document.createElement('span');
+                            newBadge.id = 'notification-badge';
+                            newBadge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                            newBadge.textContent = total;
+                            dropdown.appendChild(newBadge);
+                        }
+
+                        lista.innerHTML = '';
+                        if (produtos.length === 0) {
+                            const item = document.createElement('div');
+                            item.className = 'px-3 py-2 text-muted small';
+                            item.textContent = 'Nenhum produto com estoque baixo.';
+                            lista.appendChild(item);
+                            return;
+                        }
+
+                        produtos.forEach((produto) => {
+                            const item = document.createElement('div');
+                            item.className = 'px-2 py-2 border-bottom notification-item';
+                            item.innerHTML = `
+                                <div class="fw-semibold">${produto.nome}</div>
+                                <div class="small text-muted">Estoque: ${produto.estoque} / Mínimo: ${produto.estoque_minimo}</div>
+                                <a href="/produtos/${produto.id}/edit" class="small">Editar produto</a>
+                            `;
+                            lista.appendChild(item);
+                        });
                     } catch (error) {
-                        console.error('Falha ao marcar notificações como lidas.', error);
+                        console.error('Falha ao atualizar notificações de estoque baixo.', error);
                     }
-                });
+                };
+
+                dropdown.addEventListener('shown.bs.dropdown', atualizarNotificacoes);
+
+                setInterval(atualizarNotificacoes, 30000);
             });
         </script>
     @endauth

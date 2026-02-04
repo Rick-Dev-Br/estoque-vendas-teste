@@ -51,7 +51,8 @@
                                 value="{{ old('preco', $produto->preco) }}"
                                 step="0.01"
                                 min="0.01"
-                                required>
+                                required
+                                data-clear-on-focus="1">
                             @error('preco')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -65,7 +66,8 @@
                                 name="estoque"
                                 value="{{ old('estoque', $produto->estoque) }}"
                                 min="0"
-                                required>
+                                required
+                                data-clear-on-focus="1">
                             @error('estoque')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -110,7 +112,8 @@
                                 step="0.01"
                                 min="0.01"
                                 required
-                                placeholder="Ex: 50 (kg por saco), 12 (un por caixa)">
+                                placeholder="Ex: 50 (kg por saco), 12 (un por caixa)"
+                                data-clear-on-focus="1">
                             @error('unidade_quantidade')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

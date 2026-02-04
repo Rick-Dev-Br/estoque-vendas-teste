@@ -40,7 +40,7 @@
                             </label>
                             <input type="number" class="form-control @error('preco') is-invalid @enderror"
                             id="preco" name="preco" value="{{ old('preco') }}" step="0.01" min="0.01"
-                            required placeholder="0,00">
+                            required placeholder="0,00" data-clear-on-focus="1">
                     @error('preco')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -57,8 +57,7 @@
                                 value="{{ old('estoque', 0) }}"
                                 min="0"
                                 required
-                                onfocus="if (this.value === '0') this.value = '';"
-                                onblur="if (this.value === '') this.value = '0';">
+                                data-clear-on-focus="1">
 
                     @error('estoque')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -110,7 +109,8 @@
                                 step="0.01"
                                 min="0.01"
                                 required
-                                placeholder="Ex: 50 (kg por saco), 12 (un por caixa)">
+                                placeholder="Ex: 50 (kg por saco), 12 (un por caixa)"
+                                data-clear-on-focus="1">
                             @error('unidade_quantidade')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

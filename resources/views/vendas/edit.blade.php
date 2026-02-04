@@ -3,7 +3,7 @@
 @section('content')
 @php
     $itens = old('itens');
-    if ('!$itens') {
+    if (!$itens) {
         $itens = $venda->itens->map(function ($item) {
             return [
                 'produto_id' => $item->produto_id,
@@ -32,8 +32,15 @@
                                     name="cliente_id" id="cliente_id" required>
                                 <option value="">Selecione um cliente</option>
                                 @foreach($clientes as $cliente)
-                                    <option value="{{ $cliente->id }}">
-                                        {{ (old('cliente_id', $venda->cliente_id) == $cliente->id) ? 'selected' : '' }}>
+                                    <option value="{{ $cliente->id }}"
+                                        data-endereco="{{ $cliente->endereco }}"
+                                        data-numero="{{ $cliente->numero }}"
+                                        data-complemento="{{ $cliente->complemento }}"
+                                        data-bairro="{{ $cliente->bairro }}"
+                                        data-cidade="{{ $cliente->cidade }}"
+                                        data-estado="{{ $cliente->estado }}"
+                                        data-cep="{{ $cliente->cep }}"
+                                        {{ old('cliente_id', $venda->cliente_id) == $cliente->id ? 'selected' : '' }}>
                                         {{ $cliente->nome }}
                                         {{ $cliente->status === 'bloqueado' ? '(bloqueado)' : ''  }}
                                     </option>
@@ -49,28 +56,54 @@
                                 id="data_compra" name="data_compra"
                                 value="{{ old('data_compra', optional($venda->data_compra)->format('Y-m-d\\TH:i')) }}">
                             @error('data_compra')
-                            <div class="invalid-feedback">{{ $massage }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-md-3 mb-3">
                             <label for="forma_pagamento" class="form-label">Forma de pagamento</label>
                             <input type="text" class="form-control @error('forma_pagamento') is-invalid @enderror"
-                                id="form_pagamento" name="form_pagamento"
+                                id="forma_pagamento" name="forma_pagamento"
                                 value="{{ old('forma_pagamento', $venda->forma_pagamento) }}">
                             @error('forma_pagamento')
-                            <div class="invalid-feedback">{{ $massage }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
 
                     <div class="row">
+                        <div class="col-12 mb-3">
+                            <label class="form-label d-block">Endereço de entrega</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="usar_endereco_cliente"
+                                    id="usar_endereco_cliente_sim" value="1"
+                                    {{ old('usar_endereco_cliente', $venda->usar_endereco_cliente ? '1' : '0') == '1' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="usar_endereco_cliente_sim">
+                                    Usar endereço do cliente (padrão)
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="usar_endereco_cliente"
+                                    id="usar_endereco_cliente_nao" value="0"
+                                    {{ old('usar_endereco_cliente', $venda->usar_endereco_cliente ? '1' : '0') == '0' ? 'checked' : '' }}>
+                                <label class="form-check-label" for="usar_endereco_cliente_nao">
+                                    Informar outro endereço de entrega
+                                </label>
+                            </div>
+                            @error('usar_endereco_cliente')
+                                <div class="text-danger small">{{ $message }}</div>
+                            @enderror
+                            <div id="endereco-cliente-resumo" class="text-muted small mt-2 d-none"></div>
+                        </div>
+                    </div>
+
+                    <div class="row" id="endereco-personalizado">
                         <div class="col-md-6 mb-3">
                             <label for="endereco_entrega" class="form-label">Endereço de entrega</label>
                             <input type="text" class="form-control @error('endereco_entrega') is-invalid @enderror"
                                 id="endereco_entrega" name="endereco_entrega"
                                 value="{{ old('endereco_entrega', $venda->endereco_entrega) }}">
                             @error('endereco_entrega')
-                            <div class="invalid-feedback">{{ $massage }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-md-2 mb-3">
@@ -79,7 +112,7 @@
                                 id="numero" name="numero"
                                 value="{{ old('numero', $venda->numero) }}">
                             @error('numero')
-                            <div class="invalid-feedback">{{ $massage }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-md-4 mb-3">
@@ -88,7 +121,7 @@
                                 id="complemento" name="complemento"
                                 value="{{ old('complemento', $venda->complemento) }}">
                             @error('complemento')
-                            <div class="invalid-feedback">{{ $massage }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-md-4 mb-3">
@@ -97,7 +130,7 @@
                                 id="bairro" name="bairro"
                                 value="{{ old('bairro', $venda->bairro) }}">
                             @error('bairro')
-                            <div class="invalid-feedback">{{ $massage }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-md-4 mb-3">
@@ -106,7 +139,7 @@
                                 id="cidade" name="cidade"
                                 value="{{ old('cidade', $venda->cidade) }}">
                             @error('cidade')
-                            <div class="invalid-feedback">{{ $massage }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-md-2 mb-3">
@@ -115,7 +148,7 @@
                                 id="estado" name="estado"
                                 value="{{ old('estado', $venda->estado) }}" maxlength="2">
                             @error('estado')
-                            <div class="invalid-feedback">{{ $massage }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="col-md-2 mb-3">
@@ -124,7 +157,7 @@
                                 id="cep" name="cep"
                                 value="{{ old('cep', $venda->cep) }}">
                             @error('cep')
-                            <div class="invalid-feedback">{{ $massage }}</div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
@@ -157,7 +190,8 @@
                                 <div class="col-md-3">
                                     <input type="number" class="form-control quantidade"
                                         name="itens[{{ $index }}][quantidade]" min="1"
-                                        value="{{ $item['quantidade'] ?? 1 }}" required>
+                                        value="{{ $item['quantidade'] ?? 1 }}" required
+                                        data-clear-on-focus="1">
                                 </div>
                                 <div class="col-md-3">
                                     <button type="button" class="btn btn-danger btn-remover"
@@ -200,31 +234,117 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    let produtoCount = document.querySelectorAll(''.produto-item).length;
+    let produtoCount = document.querySelectorAll('.produto-item').length;
     const totalSpan = document.getElementById('total-venda');
+    const usarEnderecoInputs = document.querySelectorAll('input[name="usar_endereco_cliente"]');
+    const enderecoContainer = document.getElementById('endereco-personalizado');
+    const resumoEndereco = document.getElementById('endereco-cliente-resumo');
+    const clienteSelect = document.getElementById('cliente_id');
+    const enderecoCampos = {
+        endereco_entrega: document.getElementById('endereco_entrega'),
+        numero: document.getElementById('numero'),
+        complemento: document.getElementById('complemento'),
+        bairro: document.getElementById('bairro'),
+        cidade: document.getElementById('cidade'),
+        estado: document.getElementById('estado'),
+        cep: document.getElementById('cep'),
+    };
 
     const atualizarTotal = () => {
         let total = 0;
         document.querySelectorAll('.produto-item').forEach(item => {
             const select = item.querySelector('.produto-select');
-            cosnt quantidade = Number(item.querySelector('.quantidade').value) || 0;
-            cosnt preco = Number(select.selectedOptions[0]?.dataset.preco || 0);
+            const quantidade = Number(item.querySelector('.quantidade').value) || 0;
+            const preco = Number(select.selectedOptions[0]?.dataset.preco || 0);
             total += preco * quantidade;
         });
         totalSpan.textContent = total.tolocaleString('pt-BR', {
-            minimumFractionsDigits: 2,
-            maximumFractionsDigits: 2
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         });
     };
 
+    const obterEnderecoCliente = () => {
+        const option = clienteSelect?.selectedOptions[0];
+        if (!option) {
+            return null;
+        }
+
+        return {
+            endereco: option.dataset.endereco || '',
+            numero: option.dataset.numero || '',
+            complemento: option.dataset.complemento || '',
+            bairro: option.dataset.bairro || '',
+            cidade: option.dataset.cidade || '',
+            estado: option.dataset.estado || '',
+            cep: option.dataset.cep || '',
+        };
+    };
+
+    const atualizarResumoEndereco = () => {
+        if (!resumoEndereco) {
+            return;
+        }
+
+        const endereco = obterEnderecoCliente();
+        if (!endereco || !endereco.endereco) {
+            resumoEndereco.textContent = 'Selecione um cliente para usar o endereço padrão.';
+            resumoEndereco.classList.remove('d-none');
+            return;
+        }
+
+        const complemento = endereco.complemento ? `, ${endereco.complemento}` : '';
+        resumoEndereco.textContent = `${endereco.endereco}, ${endereco.numero || 's/n'}${complemento} - ${endereco.bairro || ''} - ${endereco.cidade || ''}/${endereco.estado || ''} (${endereco.cep || ''})`;
+        resumoEndereco.classList.remove('d-none');
+    };
+
+    const aplicarEnderecoCliente = () => {
+        const endereco = obterEnderecoCliente();
+        if (!endereco) {
+            return;
+        }
+        enderecoCampos.endereco_entrega.value = endereco.endereco;
+        enderecoCampos.numero.value = endereco.numero;
+        enderecoCampos.complemento.value = endereco.complemento;
+        enderecoCampos.bairro.value = endereco.bairro;
+        enderecoCampos.cidade.value = endereco.cidade;
+        enderecoCampos.estado.value = endereco.estado;
+        enderecoCampos.cep.value = endereco.cep;
+    };
+
+    const alternarEndereco = () => {
+        const usarCliente = document.querySelector('input[name="usar_endereco_cliente"]:checked')?.value === '1';
+        if (enderecoContainer) {
+            enderecoContainer.style.display = usarCliente ? 'none' : '';
+        }
+        if (usarCliente) {
+            aplicarEnderecoCliente();
+            atualizarResumoEndereco();
+        } else if (resumoEndereco) {
+            resumoEndereco.classList.add('d-none');
+        }
+    };
+
+    usarEnderecoInputs.forEach((input) => {
+        input.addEventListener('change', alternarEndereco);
+    });
+
+    clienteSelect?.addEventListener('change', () => {
+        const usarCliente = document.querySelector('input[name="usar_endereco_cliente"]:checked')?.value === '1';
+        if (usarCliente) {
+            aplicarEnderecoCliente();
+            atualizarResumoEndereco();
+        }
+    });
+
     document.getElementById('btn-adicionar-produto').addEventListener('click', function() {
-        cosnt container = document.getElementoById('produto-container');
+        const container = document.getElementById('produtos-container');
         const novoItem = document.querySelector('.produto-item').cloneNode(true);
         const selects = novoItem.querySelectorAll('select');
         const inputs = novoItem.querySelectorAll('input');
 
         selects.forEach(select => {
-            seelct.name = select.name.replace(/\[\d+\]/, `[${produtoCount}]`);
+            select.name = select.name.replace(/\[\d+\]/, `[${produtoCount}]`);
             select.value = '';
         });
 
@@ -233,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
             input.value = 1;
         });
 
-        novoItem.querySelector('.btn-remover').styel.display = 'block';
+        novoItem.querySelector('.btn-remover').style.display = 'block';
         container.appendChild(novoItem);
         produtoCount++;
         atualizarTotal();
@@ -257,6 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     atualizarTotal();
+    alternarEndereco();
 });
 </script>
 @endpush

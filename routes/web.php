@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\VendaController;
+use App\Http\Controllers\NotificacaoController;
 
 /**
  * Página inicial:
@@ -76,6 +77,8 @@ Route::middleware(['auth'])->group(function () {
         return response()->noContent();
     })->name('notificacoes.ler');
 
+    Route::get('notificacoes/estoque-baixo', [NotificacaoController::class, 'estoqueBaixo'])
+        ->name('notificacoes.estoque-baixo');
 
     Route::get('/api/produtos/{id}', function ($id) {
         $produto = \App\Models\Produto::find($id);
