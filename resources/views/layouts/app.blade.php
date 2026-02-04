@@ -81,7 +81,9 @@
                             @endphp
                             <li class="nav-item dropdown me-2">
                                 <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown"
-                                    id="notificationDropdown" data-notifications-url="{{ route('notificacoes.estoque-baixo') }}">
+                                    id="notificationDropdown"
+                                    data-notifications-url="{{ route('notificacoes.estoque-baixo') }}"
+                                    data-dismiss-url="{{ route('notificacoes.dispensar') }}">
                                     <i class="bi bi-bell-fill"></i>
                                     @if($notificacoesTotal > 0)
                                         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
@@ -95,8 +97,14 @@
                                     <div id="estoque-baixo-lista">
                                         @forelse($notificacoesLista as $notificacao)
                                             <div class="px-2 py-2 border-bottom notification-item" data-notification-id="{{ $notificacao->id }}">
-                                                <div class="fw-semibold">
-                                                    {{ $notificacao->data['titulo'] ?? 'Produtos com estoque baixo' }}
+                                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                                    <div class="fw-semibold">
+                                                        {{ $notificacao->data['titulo'] ?? 'Produtos com estoque baixo' }}
+                                                    </div>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary notification-dismiss"
+                                                        data-notification-id="{{ $notificacao->id }}">
+                                                        Desativar
+                                                    </button>
                                                 </div>
                                                 @forelse($notificacao->data['produtos'] ?? [] as $produto)
                                                     <div class="small text-muted">
@@ -188,6 +196,7 @@
                 const dropdown = document.getElementById('notificationDropdown');
                 const lista = document.getElementById('estoque-baixo-lista');
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const dismissUrl = dropdown.dataset.dismissUrl;
 
                 if (!dropdown) {
                     return;
@@ -222,23 +231,9 @@
                     }
                 };
 
-                const marcarNotificacoesComoLidas = async () => {
-                    if (!csrfToken) {
-                        return;
-                    }
-
-                    try {
-                        await fetch("{{ route('notificacoes.ler') }}", {
-                            method: 'POST',
-                            headers: {
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': csrfToken
-                            },
-                            keepalive: true
-                        });
-                    } catch (error) {
-                        console.error('Falha ao marcar notificações como lidas.', error);
-                    }
+                const obterTotalAtual = () => {
+                    const badge = document.getElementById('notification-badge');
+                    return Number(badge?.textContent || 0);
                 };
 
                 const atualizarNotificacoes = async () => {
@@ -251,7 +246,8 @@
                         const response = await fetch(url, {
                             headers: {
                                 'Accept': 'application/json'
-                            }
+                            },
+                            cache: 'no-store'
                         });
 
                         if (!response.ok) {
@@ -289,7 +285,13 @@
                                 : '<div class="small text-muted">Nenhum detalhe disponível.</div>';
 
                             item.innerHTML = `
-                                <div class="fw-semibold">${titulo}</div>
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <div class="fw-semibold">${titulo}</div>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary notification-dismiss"
+                                        data-notification-id="${notificacao.id}">
+                                        Desativar
+                                    </button>
+                                </div>
                                 ${linhasProdutos}
                             `;
                             lista.appendChild(item);
@@ -299,20 +301,56 @@
                     }
                 };
 
-                lista?.addEventListener('click', (event) => {
-                    const item = event.target.closest('.notification-item');
-                    if (!item) {
+                lista?.addEventListener('click', async (event) => {
+                    const button = event.target.closest('.notification-dismiss');
+                    if (!button) {
                         return;
                     }
 
-                    marcarNotificacoesComoLidas();
-                    atualizarBadge(0);
-                    limparNotificacoes();
+                    const notificationId = button.dataset.notificationId;
+                    if (!notificationId || !csrfToken || !dismissUrl) {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(dismissUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            },
+                            body: JSON.stringify({ id: notificationId })
+                        });
+
+                        if (!response.ok) {
+                            return;
+                        }
+
+                        const data = await response.json().catch(() => ({}));
+                        const item = button.closest('.notification-item');
+                        if (item) {
+                            item.remove();
+                        }
+
+                        if (typeof data.total === 'number') {
+                            atualizarBadge(data.total);
+                        } else {
+                            atualizarBadge(Math.max(0, obterTotalAtual() - 1));
+                        }
+
+                        if (lista.children.length === 0) {
+                            limparNotificacoes();
+                        }
+                    } catch (error) {
+                        console.error('Falha ao dispensar notificação.', error);
+                    }
                 });
 
                 dropdown.addEventListener('shown.bs.dropdown', atualizarNotificacoes);
 
-                setInterval(atualizarNotificacoes, 30000);
+                atualizarNotificacoes();
+                setInterval(atualizarNotificacoes, 300000);
             });
         </script>
     @endauth

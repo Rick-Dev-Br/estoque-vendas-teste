@@ -35,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-                View::composer('layouts.app', function ($view) {
+        View::composer('layouts.app', function ($view) {
             $usuario = Auth::user();
             $notificacoes = collect();
             $notificacoesNaoLidas = 0;
@@ -58,16 +58,19 @@ class AppServiceProvider extends ServiceProvider
 
                 if ($produtosBaixoEstoque->isNotEmpty()) {
                     $cacheKey = "notificacoes.estoque_baixo.{$usuario->id}";
-                    $notificacaoRecente = Cache::remember($cacheKey, now()->addMinute(), function () use ($usuario) {
-                        return $usuario->notifications()
-                            ->where('type', EstoqueBaixoNotification::class)
-                            ->where('created_at', '>=', now()->subMinutes(30))
-                            ->exists();
-                    });
+                    $assinaturaAtual = md5($produtosBaixoEstoque
+                        ->map(fn ($produto) => [
+                            $produto->id,
+                            $produto->estoque,
+                            $produto->estoque_minimo,
+                        ])
+                        ->values()
+                        ->toJson());
+                    $assinaturaAnterior = Cache::get($cacheKey);
 
-                    if (!$notificacaoRecente) {
+                    if ($assinaturaAnterior !== $assinaturaAtual) {
                         $usuario->notify(new EstoqueBaixoNotification($produtosBaixoEstoque->toArray()));
-                        Cache::put($cacheKey, true, now()->addMinutes(30));
+                        Cache::put($cacheKey, $assinaturaAtual, now()->addHours(6));
                         Cache::forget("notificacoes.lista.{$usuario->id}");
                         Cache::forget("notificacoes.nao_lidas.{$usuario->id}");
                     }

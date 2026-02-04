@@ -80,6 +80,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('notificacoes/estoque-baixo', [NotificacaoController::class, 'estoqueBaixo'])
         ->name('notificacoes.estoque-baixo');
 
+    Route::post('notificacoes/dispensar', [NotificacaoController::class, 'dispensar'])
+        ->name('notificacoes.dispensar');
+
     Route::get('/api/produtos/{id}', function ($id) {
         $produto = \App\Models\Produto::find($id);
 
