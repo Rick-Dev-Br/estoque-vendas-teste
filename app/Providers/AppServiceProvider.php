@@ -78,9 +78,9 @@ class AppServiceProvider extends ServiceProvider
             }
 
             $notificacoes = Cache::remember("notificacoes.lista.{$usuario->id}", now()->addSeconds(30), function () use ($usuario) {
-                return $usuario->unreadNotifications()
+                return $usuario->notifications()
                     ->latest()
-                    ->take(5)
+                    ->take(8)
                     ->get(['id', 'type', 'data', 'read_at', 'created_at']);
             });
 

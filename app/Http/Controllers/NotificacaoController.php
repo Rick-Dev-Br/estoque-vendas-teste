@@ -20,12 +20,12 @@ class NotificacaoController extends Controller
             ], Response::HTTP_UNAUTHORIZED);
         }
 
-        $query = $usuario->unreadNotifications()
+        $query = $usuario->notifications()
             ->where('type', EstoqueBaixoNotification::class);
 
         $notificacoes = $query
             ->latest()
-            ->take(5)
+            ->take(8)
             ->get()
             ->map(function ($notificacao) {
                 return [
@@ -33,12 +33,16 @@ class NotificacaoController extends Controller
                     'titulo' => $notificacao->data['titulo'] ?? 'Produtos com estoque baixo',
                     'produtos' => $notificacao->data['produtos'] ?? [],
                     'created_at' => optional($notificacao->created_at)->toDateTimeString(),
+                    'read_at' => optional($notificacao->read_at)->toDateTimeString(),
+                    'lida' => (bool) $notificacao->read_at,
                 ];
             })
             ->values();
 
         return response()->json([
-            'total' => $query->count(),
+            'total' => $usuario->unreadNotifications()
+                ->where('type', EstoqueBaixoNotification::class)
+                ->count(),
             'notificacoes' => $notificacoes,
         ]);
     }

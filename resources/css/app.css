@@ -63,3 +63,70 @@ body {
     font-weight: 600;
     color: #111827;
 }
+
+.notification-dropdown {
+    min-width: 360px;
+    max-width: 420px;
+}
+
+.notification-list {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item.is-dismissed {
+    background: #f8fafc;
+    opacity: 0.8;
+}
+
+.notification-item-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.notification-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--app-text-muted);
+}
+
+.notification-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.notification-detail-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.notification-status-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: #2563eb;
+}
+
+.notification-item.is-dismissed .notification-status-dot {
+    background: #94a3b8;
+}

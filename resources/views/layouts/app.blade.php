@@ -92,33 +92,66 @@
                                         </span>
                                     @endif
                                 </a>
-                                <div class="dropdown-menu dropdown-menu-end p-2" style="min-width: 320px;">
-                                    <h6 class="dropdown-header">Estoque baixo</h6>
-                                    <div id="estoque-baixo-lista">
+                                <div class="dropdown-menu dropdown-menu-end p-0 notification-dropdown">
+                                    <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-0">Estoque baixo</h6>
+                                            <small class="text-muted">Acompanhe alertas ativos e dispensados.</small>
+                                        </div>
+                                        <span class="badge bg-primary-subtle text-primary fw-semibold">Monitoramento</span>
+                                    </div>
+                                    <div id="estoque-baixo-lista" class="notification-list">
                                         @forelse($notificacoesLista as $notificacao)
-                                            <div class="px-2 py-2 border-bottom notification-item" data-notification-id="{{ $notificacao->id }}">
-                                                <div class="d-flex justify-content-between align-items-start gap-2">
-                                                    <div class="fw-semibold">
-                                                        {{ $notificacao->data['titulo'] ?? 'Produtos com estoque baixo' }}
+                                        @php
+                                                $notificacaoLida = !is_null($notificacao->read_at);
+                                                $tituloNotificacao = $notificacao->data['titulo'] ?? 'Produtos com estoque baixo';
+                                            @endphp
+                                            <div class="notification-item {{ $notificacaoLida ? 'is-dismissed' : '' }}"
+                                                data-notification-id="{{ $notificacao->id }}"
+                                                data-notification-read="{{ $notificacaoLida ? '1' : '0' }}">
+                                                <div class="notification-item-header">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span class="notification-status-dot"></span>
+                                                        <div class="fw-semibold text-dark">{{ $tituloNotificacao }}</div>
                                                     </div>
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary notification-dismiss"
-                                                        data-notification-id="{{ $notificacao->id }}">
-                                                        Desativar
-                                                    </button>
-                                                </div>
-                                                @forelse($notificacao->data['produtos'] ?? [] as $produto)
-                                                    <div class="small text-muted">
-                                                        {{ $produto['nome'] ?? 'Produto' }} — Estoque: {{ $produto['estoque'] ?? '-' }} / Mínimo: {{ $produto['estoque_minimo'] ?? '-' }}
-                                                    </div>
-                                                    @if(!empty($produto['id']))
-                                                        <a href="{{ route('produtos.edit', $produto['id']) }}" class="small">Editar produto</a>
+                                                    @if($notificacaoLida)
+                                                        <span class="badge bg-secondary-subtle text-secondary">Dispensada</span>
+                                                    @else
+                                                        <button type="button" class="btn btn-sm btn-outline-primary notification-dismiss"
+                                                            data-notification-id="{{ $notificacao->id }}">
+                                                            Desativar
+                                                        </button>
                                                     @endif
-                                                @empty
-                                                    <div class="small text-muted">Nenhum detalhe disponível.</div>
-                                                @endforelse
+                                                 </div>
+                                                <div class="notification-meta">
+                                                    <i class="bi bi-clock"></i>
+                                                    <span>
+                                                        {{ optional($notificacao->created_at)->format('d/m/Y H:i') }}
+                                                    </span>
+                                                </div>
+                                                <div class="notification-details">
+                                                    @forelse($notificacao->data['produtos'] ?? [] as $produto)
+                                                        <div class="notification-detail-row">
+                                                            <div class="text-muted small">
+                                                                {{ $produto['nome'] ?? 'Produto' }}
+                                                            </div>
+                                                            <div class="small fw-semibold">
+                                                                {{ $produto['estoque'] ?? '-' }} / {{ $produto['estoque_minimo'] ?? '-' }}
+                                                            </div>
+                                                        </div>
+                                                        @if(!empty($produto['id']))
+                                                            <a href="{{ route('produtos.edit', $produto['id']) }}" class="small text-decoration-none">
+                                                                <i class="bi bi-pencil-square"></i>
+                                                                Ajustar produto
+                                                            </a>
+                                                        @endif
+                                                    @empty
+                                                        <div class="small text-muted">Nenhum detalhe disponível.</div>
+                                                    @endforelse
+                                                </div>
                                             </div>
                                             @empty
-                                            <div class="px-3 py-2 text-muted small">Nenhum produto com estoque baixo.</div>
+                                            <div class="px-3 py-3 text-muted small">Nenhum alerta registrado.</div>
                                         @endforelse
                                     </div>
                                 </div>
@@ -205,9 +238,86 @@
                 const limparNotificacoes = () => {
                     lista.innerHTML = '';
                     const item = document.createElement('div');
-                    item.className = 'px-3 py-2 text-muted small';
-                    item.textContent = 'Nenhum produto com estoque baixo.';
+                    item.className = 'px-3 py-3 text-muted small';
+                    item.textContent = 'Nenhum alerta registrado.';;
                     lista.appendChild(item);
+                };
+
+                const formatarData = (data) => {
+                    if (!data) {
+                        return 'Data indisponível';
+                    }
+
+                    const parsed = new Date(data);
+                    if (Number.isNaN(parsed.getTime())) {
+                        return 'Data indisponível';
+                    }
+
+                    return parsed.toLocaleString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                };
+
+                const construirItem = (notificacao) => {
+                    const item = document.createElement('div');
+                    const produtos = Array.isArray(notificacao.produtos) ? notificacao.produtos : [];
+                    const titulo = notificacao.titulo || 'Produtos com estoque baixo';
+                    const isRead = Boolean(notificacao.lida);
+
+                    item.className = `notification-item${isRead ? ' is-dismissed' : ''}`;
+                    item.dataset.notificationId = notificacao.id;
+                    item.dataset.notificationRead = isRead ? '1' : '0';
+
+                    const linhasProdutos = produtos.length
+                        ? produtos.map((produto) => {
+                            const nome = produto.nome || 'Produto';
+                            const estoque = produto.estoque ?? '-';
+                            const minimo = produto.estoque_minimo ?? '-';
+                            const link = produto.id
+                                ? `<a href="/produtos/${produto.id}/edit" class="small text-decoration-none">
+                                        <i class="bi bi-pencil-square"></i>
+                                        Ajustar produto
+                                    </a>`
+                                : '';
+                            return `
+                                <div class="notification-detail-row">
+                                    <div class="text-muted small">${nome}</div>
+                                    <div class="small fw-semibold">${estoque} / ${minimo}</div>
+                                </div>
+                                ${link}
+                            `;
+                        }).join('')
+                        : '<div class="small text-muted">Nenhum detalhe disponível.</div>';
+
+                    const buttonOrBadge = isRead
+                        ? '<span class="badge bg-secondary-subtle text-secondary">Dispensada</span>'
+                        : `<button type="button" class="btn btn-sm btn-outline-primary notification-dismiss"
+                                data-notification-id="${notificacao.id}">
+                                Desativar
+                            </button>`;
+
+                    item.innerHTML = `
+                        <div class="notification-item-header">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="notification-status-dot"></span>
+                                <div class="fw-semibold text-dark">${titulo}</div>
+                            </div>
+                            ${buttonOrBadge}
+                        </div>
+                        <div class="notification-meta">
+                            <i class="bi bi-clock"></i>
+                            <span>${formatarData(notificacao.created_at)}</span>
+                        </div>
+                        <div class="notification-details">
+                            ${linhasProdutos}
+                        </div>
+                    `;
+
+                    return item;
                 };
 
                 const atualizarBadge = (total) => {
@@ -267,34 +377,7 @@
                         }
 
                         notificacoes.forEach((notificacao) => {
-                            const item = document.createElement('div');
-                            item.className = 'px-2 py-2 border-bottom notification-item';
-                            const produtos = Array.isArray(notificacao.produtos) ? notificacao.produtos : [];
-                            const titulo = notificacao.titulo || 'Produtos com estoque baixo';
-                            const linhasProdutos = produtos.length
-                                ? produtos.map((produto) => {
-                                    const nome = produto.nome || 'Produto';
-                                    const estoque = produto.estoque ?? '-';
-                                    const minimo = produto.estoque_minimo ?? '-';
-                                    const link = produto.id ? `<a href="/produtos/${produto.id}/edit" class="small">Editar produto</a>` : '';
-                                    return `
-                                        <div class="small text-muted">${nome} — Estoque: ${estoque} / Mínimo: ${minimo}</div>
-                                        ${link}
-                                    `;
-                                }).join('')
-                                : '<div class="small text-muted">Nenhum detalhe disponível.</div>';
-
-                            item.innerHTML = `
-                                <div class="d-flex justify-content-between align-items-start gap-2">
-                                    <div class="fw-semibold">${titulo}</div>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary notification-dismiss"
-                                        data-notification-id="${notificacao.id}">
-                                        Desativar
-                                    </button>
-                                </div>
-                                ${linhasProdutos}
-                            `;
-                            lista.appendChild(item);
+                            lista.appendChild(construirItem(notificacao));
                         });
                     } catch (error) {
                         console.error('Falha ao atualizar notificações de estoque baixo.', error);
@@ -330,7 +413,12 @@
                         const data = await response.json().catch(() => ({}));
                         const item = button.closest('.notification-item');
                         if (item) {
-                            item.remove();
+                            item.classList.add('is-dismissed');
+                            item.dataset.notificationRead = '1';
+                            const badge = document.createElement('span');
+                            badge.className = 'badge bg-secondary-subtle text-secondary';
+                            badge.textContent = 'Dispensada';
+                            button.replaceWith(badge);
                         }
 
                         if (typeof data.total === 'number') {
