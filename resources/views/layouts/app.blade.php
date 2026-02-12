@@ -287,7 +287,6 @@
                     }
                 };
 
-
                 const limparNotificacoes = () => {
                     lista.innerHTML = '';
                     const item = document.createElement('div');
