@@ -67,11 +67,20 @@ body {
 .notification-dropdown {
     min-width: 360px;
     max-width: 420px;
+    border: 1px solid #dbe4ff;
+    border-radius: 0.9rem;
+    overflow: hidden;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.16);
+}
+
+.notification-dropdown-header {
+    background: linear-gradient(120deg, #f8fbff 0%, #eef4ff 100%);
 }
 
 .notification-list {
     max-height: 420px;
     overflow-y: auto;
+    background: #f8fafc;
 }
 
 .notification-item {
@@ -81,15 +90,22 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    border-radius: 0.75rem;
+    margin: 0.5rem;
+    border: 1px solid #e7eefc;
 }
 
 .notification-item:last-child {
-    border-bottom: none;
+    border-bottom: 1px solid #e7eefc;
 }
 
 .notification-item.is-dismissed {
     background: #f8fafc;
     opacity: 0.8;
+}
+
+.notification-actions {
+    background: #ffffff;
 }
 
 .notification-item-header {

@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class Produto extends Model
@@ -159,5 +160,6 @@ class Produto extends Model
         }
 
         $this->save();
+        Cache::forget('produtos.estoque_baixo');
     }
 }

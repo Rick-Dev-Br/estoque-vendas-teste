@@ -93,7 +93,7 @@
                                     @endif
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-end p-0 notification-dropdown">
-                                    <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                                    <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center notification-dropdown-header">
                                         <div>
                                             <h6 class="mb-0">Estoque baixo</h6>
                                             <small class="text-muted">Acompanhe alertas ativos e dispensados.</small>
@@ -105,8 +105,9 @@
                                         @php
                                                 $notificacaoLida = !is_null($notificacao->read_at);
                                                 $tituloNotificacao = $notificacao->data['titulo'] ?? 'Produtos com estoque baixo';
+                                                $ocultarInicial = $loop->index >= 3;
                                             @endphp
-                                            <div class="notification-item {{ $notificacaoLida ? 'is-dismissed' : '' }}"
+                                            <div class="notification-item {{ $notificacaoLida ? 'is-dismissed' : '' }} {{ $ocultarInicial ? 'd-none' : '' }}"
                                                 data-notification-id="{{ $notificacao->id }}"
                                                 data-notification-read="{{ $notificacaoLida ? '1' : '0' }}">
                                                 <div class="notification-item-header">
@@ -122,7 +123,7 @@
                                                             Desativar
                                                         </button>
                                                     @endif
-                                                 </div>
+                                                </div>
                                                 <div class="notification-meta">
                                                     <i class="bi bi-clock"></i>
                                                     <span>
@@ -153,6 +154,12 @@
                                             @empty
                                             <div class="px-3 py-3 text-muted small">Nenhum alerta registrado.</div>
                                         @endforelse
+                                    </div>
+                                    <div class="notification-actions border-top px-3 py-2 d-flex justify-content-between align-items-center">
+                                        <small class="text-muted" id="notification-visible-count">Mostrando 3 alertas mais recentes</small>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="notification-toggle" hidden>
+                                            Ver todos
+                                        </button>
                                     </div>
                                 </div>
                             </li>
@@ -228,19 +235,71 @@
             document.addEventListener('DOMContentLoaded', () => {
                 const dropdown = document.getElementById('notificationDropdown');
                 const lista = document.getElementById('estoque-baixo-lista');
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                const dismissUrl = dropdown.dataset.dismissUrl;
-
                 if (!dropdown) {
                     return;
                 }
+
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const dismissUrl = dropdown.dataset.dismissUrl;
+                const toggleButton = document.getElementById('notification-toggle');
+                const visibleCountLabel = document.getElementById('notification-visible-count');
+                const limitInitial = 3;
+                let mostrarTudo = false;
+
+                const atualizarVisibilidade = () => {
+                    if (!lista) {
+                        return;
+                    }
+
+                    const items = Array.from(lista.querySelectorAll('.notification-item'));
+                    const total = items.length;
+
+                    if (total === 0) {
+                        if (toggleButton) {
+                            toggleButton.hidden = true;
+                        }
+                        if (visibleCountLabel) {
+                            visibleCountLabel.textContent = 'Sem alertas ativos no momento';
+                        }
+                        return;
+                    }
+
+                    const limite = mostrarTudo ? total : limitInitial;
+                    let exibidos = 0;
+
+                    items.forEach((item, index) => {
+                        const deveMostrar = index < limite;
+                        item.classList.toggle('d-none', !deveMostrar);
+                        if (deveMostrar) {
+                            exibidos += 1;
+                        }
+                    });
+
+                    if (toggleButton) {
+                        toggleButton.hidden = total <= limitInitial;
+                        toggleButton.textContent = mostrarTudo ? 'Mostrar menos' : 'Ver todos';
+                    }
+
+                    if (visibleCountLabel) {
+                        visibleCountLabel.textContent = mostrarTudo
+                            ? `Mostrando todos os ${total} alertas`
+                            : `Mostrando ${exibidos} de ${total} alertas`;
+                    }
+                };
+
 
                 const limparNotificacoes = () => {
                     lista.innerHTML = '';
                     const item = document.createElement('div');
                     item.className = 'px-3 py-3 text-muted small';
-                    item.textContent = 'Nenhum alerta registrado.';;
+                    item.textContent = 'Nenhum alerta registrado.';
                     lista.appendChild(item);
+                    if (toggleButton) {
+                        toggleButton.hidden = true;
+                    }
+                    if (visibleCountLabel) {
+                        visibleCountLabel.textContent = 'Sem alertas ativos no momento';
+                    }
                 };
 
                 const formatarData = (data) => {
@@ -379,6 +438,8 @@
                         notificacoes.forEach((notificacao) => {
                             lista.appendChild(construirItem(notificacao));
                         });
+
+                        atualizarVisibilidade();
                     } catch (error) {
                         console.error('Falha ao atualizar notificações de estoque baixo.', error);
                     }
@@ -429,17 +490,28 @@
 
                         if (lista.children.length === 0) {
                             limparNotificacoes();
+                            return;
                         }
+
+                        atualizarVisibilidade();
                     } catch (error) {
                         console.error('Falha ao dispensar notificação.', error);
                     }
                 });
+
+                toggleButton?.addEventListener('click', () => {
+                    mostrarTudo = !mostrarTudo;
+                    atualizarVisibilidade();
+                });
+
+                atualizarVisibilidade();
 
                 let notificacoesIniciadas = false;
                 let intervaloNotificacoes = null;
 
                 dropdown.addEventListener('shown.bs.dropdown', () => {
                     atualizarNotificacoes();
+                    atualizarVisibilidade();
 
                     if (!notificacoesIniciadas) {
                         intervaloNotificacoes = setInterval(atualizarNotificacoes, 300000);
