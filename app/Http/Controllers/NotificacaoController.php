@@ -62,7 +62,9 @@ class NotificacaoController extends Controller
     {
         $request->user()->notifications()->delete();
 
-        return back()->with('success', 'Todas as notificações foram removidas.');
+        return redirect()
+            ->route('notificacoes.index')
+            ->with('success', 'Todas as notificações foram removidas.');
     }
 
     protected function findUserNotification(Request $request, string $id): DatabaseNotification

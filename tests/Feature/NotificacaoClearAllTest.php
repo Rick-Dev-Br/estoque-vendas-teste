@@ -11,8 +11,9 @@ class NotificacaoClearAllTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_usuario_consegue_limpar_notificacoes_pela_rota_get(): void
+    public function test_usuario_consegue_limpar_notificacoes_pela_rota_delete(): void
     {
+
         $user = User::factory()->create();
 
         $user->notify(new class extends Notification {
@@ -28,8 +29,8 @@ class NotificacaoClearAllTest extends TestCase
         });
 
         $this->actingAs($user)
-            ->get(route('notificacoes.clearAll'))
-            ->assertRedirect();
+            ->delete(route('notificacoes.clearAll'))
+            ->assertRedirect(route('notificacoes.index'));
 
         $this->assertDatabaseCount('notifications', 0);
     }
