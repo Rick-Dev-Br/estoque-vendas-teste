@@ -34,7 +34,7 @@ class NotificacaoController extends Controller
 
     public function markAsRead(Request $request, string $id): RedirectResponse
     {
-        $usuario = $request->user();
+        $notificacao = $this->findUserNotification($request, $id);
 
         if (!$notificacao->read_at) {
             $notificacao->markAsRead();
