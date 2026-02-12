@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Produto;
 use App\Models\User;
 use App\Notifications\EstoqueBaixoNotification;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
@@ -80,7 +81,7 @@ class AppServiceProvider extends ServiceProvider
             $notificacoes = Cache::remember("notificacoes.lista.{$usuario->id}", now()->addSeconds(30), function () use ($usuario) {
                 return $usuario->notifications()
                     ->latest()
-                    ->take(8)
+                    ->take(5)
                     ->get(['id', 'type', 'data', 'read_at', 'created_at']);
             });
 
@@ -92,6 +93,20 @@ class AppServiceProvider extends ServiceProvider
                 'notificacoes' => $notificacoes,
                 'notificacoesNaoLidas' => $notificacoesNaoLidas,
             ]);
+        });
+
+        DatabaseNotification::deleting(function (DatabaseNotification $notification) {
+            if ($notification->notifiable_type === User::class && $notification->notifiable_id) {
+                Cache::forget("notificacoes.lista.{$notification->notifiable_id}");
+                Cache::forget("notificacoes.nao_lidas.{$notification->notifiable_id}");
+            }
+        });
+
+        DatabaseNotification::saved(function (DatabaseNotification $notification) {
+            if ($notification->notifiable_type === User::class && $notification->notifiable_id) {
+                Cache::forget("notificacoes.lista.{$notification->notifiable_id}");
+                Cache::forget("notificacoes.nao_lidas.{$notification->notifiable_id}");
+            }
         });
     }
 }

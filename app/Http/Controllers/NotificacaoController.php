@@ -2,79 +2,74 @@
 
 namespace App\Http\Controllers;
 
-use App\Notifications\EstoqueBaixoNotification;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Notifications\DatabaseNotification;
 
 class NotificacaoController extends Controller
 {
-    public function estoqueBaixo(Request $request): JsonResponse
+    public function index(Request $request): View
     {
         $usuario = $request->user();
+        $filtro = $request->string('filtro')->toString();
 
-        if (!$usuario) {
-            return response()->json([
-                'total' => 0,
-                'notificacoes' => [],
-            ], Response::HTTP_UNAUTHORIZED);
+        $query = $usuario->notifications()->latest();
+
+        if ($filtro === 'nao_lidas') {
+            $query->whereNull('read_at');
         }
 
-        $query = $usuario->notifications()
-            ->where('type', EstoqueBaixoNotification::class);
+        if ($filtro === 'lidas') {
+            $query->whereNotNull('read_at');
+        }
 
-        $notificacoes = $query
-            ->latest()
-            ->take(8)
-            ->get()
-            ->map(function ($notificacao) {
-                return [
-                    'id' => $notificacao->id,
-                    'titulo' => $notificacao->data['titulo'] ?? 'Produtos com estoque baixo',
-                    'produtos' => $notificacao->data['produtos'] ?? [],
-                    'created_at' => optional($notificacao->created_at)->toDateTimeString(),
-                    'read_at' => optional($notificacao->read_at)->toDateTimeString(),
-                    'lida' => (bool) $notificacao->read_at,
-                ];
-            })
-            ->values();
+        $notificacoes = $query->paginate(15)->withQueryString();
 
-        return response()->json([
-            'total' => $usuario->unreadNotifications()
-                ->where('type', EstoqueBaixoNotification::class)
-                ->count(),
+        return view('notificacoes.index', [
             'notificacoes' => $notificacoes,
+            'filtro' => in_array($filtro, ['nao_lidas', 'lidas'], true) ? $filtro : 'todas',
         ]);
     }
 
-    public function dispensar(Request $request): JsonResponse
+    public function markAsRead(Request $request, string $id): RedirectResponse
     {
         $usuario = $request->user();
 
-        if (!$usuario) {
-            return response()->json([
-                'message' => 'Usuário não autenticado.',
-            ], Response::HTTP_UNAUTHORIZED);
+        if (!$notificacao->read_at) {
+            $notificacao->markAsRead();
         }
 
-        $id = $request->string('id')->toString();
-        if (!$id) {
-            return response()->json([
-                'message' => 'Notificação inválida.',
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
+        return back()->with('success', 'Notificação marcada como lida.');
+    }
 
-        $notificacao = $usuario->notifications()->whereKey($id)->first();
-        if (!$notificacao) {
-            return response()->json([
-                'message' => 'Notificação não encontrada.',
-            ], Response::HTTP_NOT_FOUND);
-        }
+        public function markAllAsRead(Request $request): RedirectResponse
+    {
+        $request->user()->unreadNotifications()->update(['read_at' => now()]);
 
-        $notificacao->markAsRead();
+        return back()->with('success', 'Todas as notificações foram marcadas como lidas.');
+    }
 
-        return response()->json([
-            'total' => $usuario->unreadNotifications()->count(),
-        ]);
+        public function destroy(Request $request, string $id): RedirectResponse
+    {
+        $notificacao = $this->findUserNotification($request, $id);
+        $notificacao->delete();
+
+        return back()->with('success', 'Notificação apagada com sucesso.');
+    }
+
+    public function clearAll(Request $request): RedirectResponse
+    {
+        $request->user()->notifications()->delete();
+
+        return back()->with('success', 'Todas as notificações foram removidas.');
+    }
+
+    protected function findUserNotification(Request $request, string $id): DatabaseNotification
+    {
+        return $request->user()
+            ->notifications()
+            ->whereKey($id)
+            ->firstOrFail();
     }
 }

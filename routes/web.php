@@ -3,7 +3,6 @@
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
 
 use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\ClienteController;
@@ -68,20 +67,13 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('vendas/{venda}/status', [VendaController::class, 'alterarStatus'])
         ->name('vendas.alterar-status');
 
-    Route::post('notificacoes/ler', function (Request $request) {
-        $usuario = $request->user();
-        if ($usuario) {
-            $usuario->unreadNotifications->markAsRead();
-        }
-
-        return response()->noContent();
-    })->name('notificacoes.ler');
-
-    Route::get('notificacoes/estoque-baixo', [NotificacaoController::class, 'estoqueBaixo'])
-        ->name('notificacoes.estoque-baixo');
-
-    Route::post('notificacoes/dispensar', [NotificacaoController::class, 'dispensar'])
-        ->name('notificacoes.dispensar');
+    Route::prefix('notificacoes')->name('notificacoes.')->group(function () {
+        Route::get('/', [NotificacaoController::class, 'index'])->name('index');
+        Route::patch('/{id}/ler', [NotificacaoController::class, 'markAsRead'])->name('markAsRead');
+        Route::patch('/marcar-todas', [NotificacaoController::class, 'markAllAsRead'])->name('markAllAsRead');
+        Route::delete('/{id}', [NotificacaoController::class, 'destroy'])->name('destroy');
+        Route::delete('/limpar', [NotificacaoController::class, 'clearAll'])->name('clearAll');
+    });
 
     Route::get('/api/produtos/{id}', function ($id) {
         $produto = \App\Models\Produto::find($id);
