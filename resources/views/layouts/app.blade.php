@@ -116,6 +116,7 @@
                                             @php
                                                 $notificacaoLida = !is_null($notificacao->read_at);
                                                 $tituloNotificacao = $notificacao->data['titulo'] ?? 'Atualização';
+                                                $tipoNotificacao = $notificacao->data['tipo'] ?? null;
                                                 $descricaoNotificacao = $notificacao->data['descricao']
                                                     ?? collect($notificacao->data['produtos'] ?? [])->pluck('nome')->take(2)->join(', ');
                                                 $descricaoNotificacao = $descricaoNotificacao ?: 'Sem detalhes adicionais.';
@@ -128,7 +129,12 @@
                                                         aria-label="Abrir notificação {{ $tituloNotificacao }}">
                                                         <div class="d-flex align-items-center gap-2 mb-1">
                                                             <span class="notification-status-dot" aria-hidden="true"></span>
-                                                            <span class="fw-semibold notification-title text-truncate">{{ $tituloNotificacao }}</span>
+                                                            <span class="fw-semibold notification-title text-truncate">
+                                                                @if($tipoNotificacao === 'estoque_esgotado')
+                                                                    <i class="bi bi-exclamation-triangle-fill text-warning me-1" aria-hidden="true"></i>
+                                                                @endif
+                                                                {{ $tituloNotificacao }}
+                                                            </span>
                                                         </div>
                                                         <div class="notification-description text-muted">{{ $descricaoNotificacao }}</div>
                                                         <div class="notification-meta mt-1">{{ optional($notificacao->created_at)->diffForHumans() }}</div>

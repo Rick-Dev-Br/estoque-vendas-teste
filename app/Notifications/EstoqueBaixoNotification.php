@@ -24,7 +24,7 @@ class EstoqueBaixoNotification extends Notification
             'tipo' => $this->tipo,
             'nivel' => $isEstoqueEsgotado ? 'alerta' : 'info',
             'titulo' => $isEstoqueEsgotado
-                ? '⚠️ Produto sem estoque'
+                ? 'Produto sem estoque'
                 : 'Produtos com estoque baixo',
             'descricao' => $isEstoqueEsgotado
                 ? 'Um ou mais produtos acabaram e precisam de reposição imediata.'

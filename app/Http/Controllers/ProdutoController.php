@@ -138,11 +138,25 @@ class ProdutoController extends Controller
 
     public function toggleStatus(Produto $produto)
     {
-        $produto->status = $produto->status == 'ativo' ? 'inativo' : 'ativo';
+        // Se estiver inativo e tentar ativar
+        if ($produto->status === 'inativo') {
+
+            if ($produto->estoque <= 0) {
+                return redirect()->route('produtos.index')
+                    ->with('error', 'O produto não pode ser ativado pois o estoque está zerado.');
+            }
+
+            $produto->status = 'ativo';
+
+        } else {
+            // Se estiver ativo, pode desativar normalmente
+            $produto->status = 'inativo';
+        }
+
         $produto->save();
 
         return redirect()->route('produtos.index')
-            ->with('success', 'Status do produto alterado!');
+            ->with('success', 'Status do produto alterado com sucesso!');
     }
 
     /**

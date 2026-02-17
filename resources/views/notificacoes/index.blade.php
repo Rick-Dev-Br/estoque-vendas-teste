@@ -38,6 +38,7 @@
                 @forelse($notificacoes as $notificacao)
                     @php
                         $titulo = $notificacao->data['titulo'] ?? 'Atualização';
+                        $tipo = $notificacao->data['tipo'] ?? null;
                         $produtosNotificacao = collect($notificacao->data['produtos'] ?? []);
                         $descricao = $notificacao->data['descricao']
                             ?? $produtosNotificacao->pluck('nome')->take(3)->join(', ');
@@ -50,7 +51,12 @@
                             <div class="flex-grow-1">
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="notification-status-dot" aria-hidden="true"></span>
-                                    <h6 class="mb-0">{{ $titulo }}</h6>
+                                    <h6 class="mb-0">
+                                        @if($tipo === 'estoque_esgotado')
+                                            <i class="bi bi-exclamation-triangle-fill text-warning me-1" aria-hidden="true"></i>
+                                        @endif
+                                        {{ $titulo }}
+                                    </h6>
                                 </div>
                                 <p class="mb-1 text-muted notification-description">{{ $descricao }}</p>
                                 <small class="text-muted">{{ optional($notificacao->created_at)->diffForHumans() }}</small>
