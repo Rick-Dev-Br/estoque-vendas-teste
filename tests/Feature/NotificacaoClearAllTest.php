@@ -14,6 +14,7 @@ class NotificacaoClearAllTest extends TestCase
     public function test_usuario_consegue_limpar_notificacoes_pela_rota_delete(): void
     {
 
+        /** @var User $user */
         $user = User::factory()->create();
 
         $user->notify(new class extends Notification {

@@ -61,9 +61,27 @@
                         </div>
                         <div class="col-md-3 mb-3">
                             <label for="forma_pagamento" class="form-label">Forma de pagamento</label>
-                            <input type="text" class="form-control @error('forma_pagamento') is-invalid @enderror"
-                                id="forma_pagamento" name="forma_pagamento"
-                                value="{{ old('forma_pagamento', $venda->forma_pagamento) }}">
+                            @php
+                                $formasPagamento = [
+                                    'pix' => 'Pix',
+                                    'cartao_credito' => 'Cartão de crédito',
+                                    'cartao_debito' => 'Cartão de débito',
+                                    'dinheiro' => 'Dinheiro',
+                                    'transferencia_bancaria' => 'Transferência bancária',
+                                    'boleto' => 'Boleto bancário',
+                                    'carteira_digital' => 'Carteira digital',
+                                    'link_pagamento' => 'Link de pagamento',
+                                ];
+                            @endphp
+                            <select class="form-select @error('forma_pagamento') is-invalid @enderror"
+                                id="forma_pagamento" name="forma_pagamento">
+                                <option value="">Selecione</option>
+                                @foreach($formasPagamento as $valorFormaPagamento => $labelFormaPagamento)
+                                    <option value="{{ $labelFormaPagamento }}" {{ old('forma_pagamento', $venda->forma_pagamento) === $labelFormaPagamento ? 'selected' : '' }}>
+                                        {{ $labelFormaPagamento }}
+                                    </option>
+                                @endforeach
+                            </select>
                             @error('forma_pagamento')
                             <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

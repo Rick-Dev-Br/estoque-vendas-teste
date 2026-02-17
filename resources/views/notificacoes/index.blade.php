@@ -38,8 +38,9 @@
                 @forelse($notificacoes as $notificacao)
                     @php
                         $titulo = $notificacao->data['titulo'] ?? 'Atualização';
+                        $produtosNotificacao = collect($notificacao->data['produtos'] ?? []);
                         $descricao = $notificacao->data['descricao']
-                            ?? collect($notificacao->data['produtos'] ?? [])->pluck('nome')->take(3)->join(', ');
+                            ?? $produtosNotificacao->pluck('nome')->take(3)->join(', ');
                         $descricao = $descricao ?: 'Sem detalhes adicionais.';
                         $link = $notificacao->data['link'] ?? null;
                         $lida = !is_null($notificacao->read_at);
@@ -56,6 +57,21 @@
                                 @if($link)
                                     <div>
                                         <a href="{{ $link }}" class="small">Abrir link da notificação</a>
+                                    </div>
+                                @endif
+
+                                @if($produtosNotificacao->isNotEmpty())
+                                    <div class="mt-2">
+                                        <p class="mb-1 small fw-semibold">Ações rápidas de estoque:</p>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            @foreach($produtosNotificacao as $produtoNotificacao)
+                                                @if(isset($produtoNotificacao['id']))
+                                                    <a href="{{ route('produtos.edit', $produtoNotificacao['id']) }}" class="btn btn-sm btn-outline-warning">
+                                                        Ajustar {{ $produtoNotificacao['nome'] ?? 'produto' }}
+                                                    </a>
+                                                @endif
+                                            @endforeach
+                                        </div>
                                     </div>
                                 @endif
                             </div>

@@ -71,8 +71,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [NotificacaoController::class, 'index'])->name('index');
         Route::patch('/{id}/ler', [NotificacaoController::class, 'markAsRead'])->name('markAsRead');
         Route::patch('/marcar-todas', [NotificacaoController::class, 'markAllAsRead'])->name('markAllAsRead');
-        Route::delete('/{id}', [NotificacaoController::class, 'destroy'])->name('destroy');
         Route::delete('/limpar', [NotificacaoController::class, 'clearAll'])->name('clearAll');
+        Route::delete('/{id}', [NotificacaoController::class, 'destroy'])->name('destroy');
     });
 
     Route::get('/api/produtos/{id}', function ($id) {
