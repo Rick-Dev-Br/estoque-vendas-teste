@@ -51,31 +51,20 @@ class AppServiceProvider extends ServiceProvider
             }
 
             if (Schema::hasTable('produtos')) {
-                $produtosBaixoEstoque = Cache::remember('produtos.estoque_baixo', now()->addMinute(), function () {
-                    return Produto::whereColumn('estoque', '<=', 'estoque_minimo')
-                        ->where('status', 'ativo')
-                        ->get(['id', 'nome', 'estoque', 'estoque_minimo']);
-                });
+                 $produtosBaixoEstoque = Produto::whereColumn('estoque', '<=', 'estoque_minimo')
+                    ->where('status', 'ativo')
+                    ->get(['id', 'nome', 'estoque', 'estoque_minimo']);
 
-                if ($produtosBaixoEstoque->isNotEmpty()) {
-                    $cacheKey = "notificacoes.estoque_baixo.{$usuario->id}";
-                    $assinaturaAtual = md5($produtosBaixoEstoque
-                        ->map(fn ($produto) => [
-                            $produto->id,
-                            $produto->estoque,
-                            $produto->estoque_minimo,
-                        ])
-                        ->values()
-                        ->toJson());
-                    $assinaturaAnterior = Cache::get($cacheKey);
+                $produtosEsgotados = $produtosBaixoEstoque
+                    ->where('estoque', '<=', 0)
+                    ->values();
 
-                    if ($assinaturaAnterior !== $assinaturaAtual) {
-                        $usuario->notify(new EstoqueBaixoNotification($produtosBaixoEstoque->toArray()));
-                        Cache::put($cacheKey, $assinaturaAtual, now()->addHours(6));
-                        Cache::forget("notificacoes.lista.{$usuario->id}");
-                        Cache::forget("notificacoes.nao_lidas.{$usuario->id}");
-                    }
-                }
+                $produtosBaixos = $produtosBaixoEstoque
+                    ->where('estoque', '>', 0)
+                    ->values();
+
+                $this->enviarNotificacaoEstoque($usuario, $produtosEsgotados, 'estoque_esgotado');
+                $this->enviarNotificacaoEstoque($usuario, $produtosBaixos, 'estoque_baixo');
             }
 
             $notificacoes = Cache::remember("notificacoes.lista.{$usuario->id}", now()->addSeconds(30), function () use ($usuario) {
@@ -108,5 +97,37 @@ class AppServiceProvider extends ServiceProvider
                 Cache::forget("notificacoes.nao_lidas.{$notification->notifiable_id}");
             }
         });
+    }
+
+    private function enviarNotificacaoEstoque(User $usuario, $produtos, string $tipo): void
+    {
+        $cacheKey = "notificacoes.{$tipo}.{$usuario->id}";
+
+        if ($produtos->isEmpty()) {
+            Cache::forget($cacheKey);
+
+            return;
+        }
+
+        $assinaturaAtual = md5($produtos
+            ->map(fn ($produto) => [
+                $produto->id,
+                $produto->estoque,
+                $produto->estoque_minimo,
+            ])
+            ->values()
+            ->toJson());
+
+        $assinaturaAnterior = Cache::get($cacheKey);
+
+        if ($assinaturaAnterior === $assinaturaAtual) {
+            return;
+        }
+
+        $usuario->notify(new EstoqueBaixoNotification($produtos->toArray(), $tipo));
+
+        Cache::put($cacheKey, $assinaturaAtual, now()->addHours(6));
+        Cache::forget("notificacoes.lista.{$usuario->id}");
+        Cache::forget("notificacoes.nao_lidas.{$usuario->id}");
     }
 }

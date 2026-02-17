@@ -6,6 +6,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\Cache;
 
 class NotificacaoController extends Controller
 {
@@ -40,12 +41,15 @@ class NotificacaoController extends Controller
             $notificacao->markAsRead();
         }
 
+        $this->limparCacheNotificacoes($request);
+
         return back()->with('success', 'Notificação marcada como lida.');
     }
 
         public function markAllAsRead(Request $request): RedirectResponse
     {
         $request->user()->unreadNotifications()->update(['read_at' => now()]);
+        $this->limparCacheNotificacoes($request);
 
         return back()->with('success', 'Todas as notificações foram marcadas como lidas.');
     }
@@ -55,12 +59,15 @@ class NotificacaoController extends Controller
         $notificacao = $this->findUserNotification($request, $id);
         $notificacao->delete();
 
+        $this->limparCacheNotificacoes($request);
+
         return back()->with('success', 'Notificação apagada com sucesso.');
     }
 
     public function clearAll(Request $request): RedirectResponse
     {
         $request->user()->notifications()->delete();
+        $this->limparCacheNotificacoes($request);
 
         return redirect()
             ->route('notificacoes.index')
@@ -73,5 +80,13 @@ class NotificacaoController extends Controller
             ->notifications()
             ->whereKey($id)
             ->firstOrFail();
+    }
+
+    private function limparCacheNotificacoes(Request $request): void
+    {
+        $userId = $request->user()->id;
+
+        Cache::forget("notificacoes.lista.{$userId}");
+        Cache::forget("notificacoes.nao_lidas.{$userId}");
     }
 }
