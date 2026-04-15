@@ -40,6 +40,13 @@
                         $titulo = $notificacao->data['titulo'] ?? 'Atualização';
                         $tipo = $notificacao->data['tipo'] ?? null;
                         $produtosNotificacao = collect($notificacao->data['produtos'] ?? []);
+                        $produtosComAjuste = $produtosNotificacao
+                            ->filter(function ($produtoNotificacao) use ($produtosAlertasAtuais) {
+                                return isset($produtoNotificacao['id'])
+                                    && in_array((string) $produtoNotificacao['id'], $produtosAlertasAtuais, true);
+                            })
+                            ->unique(fn ($produtoNotificacao) => (string) ($produtoNotificacao['id'] ?? ''))
+                            ->values();
                         $descricao = $notificacao->data['descricao']
                             ?? $produtosNotificacao->pluck('nome')->take(3)->join(', ');
                         $descricao = $descricao ?: 'Sem detalhes adicionais.';
@@ -66,16 +73,14 @@
                                     </div>
                                 @endif
 
-                                @if($produtosNotificacao->isNotEmpty())
+                                @if($produtosComAjuste->isNotEmpty())
                                     <div class="mt-2">
                                         <p class="mb-1 small fw-semibold">Ações rápidas de estoque:</p>
                                         <div class="d-flex flex-wrap gap-2">
-                                            @foreach($produtosNotificacao as $produtoNotificacao)
-                                                @if(isset($produtoNotificacao['id']))
-                                                    <a href="{{ route('produtos.edit', $produtoNotificacao['id']) }}" class="btn btn-sm btn-outline-warning">
-                                                        Ajustar {{ $produtoNotificacao['nome'] ?? 'produto' }}
-                                                    </a>
-                                                @endif
+                                            @foreach($produtosComAjuste as $produtoNotificacao)
+                                                <a href="{{ route('produtos.edit', $produtoNotificacao['id']) }}" class="btn btn-sm btn-outline-warning">
+                                                    Ajustar {{ $produtoNotificacao['nome'] ?? 'produto' }}
+                                                </a>
                                             @endforeach
                                         </div>
                                     </div>

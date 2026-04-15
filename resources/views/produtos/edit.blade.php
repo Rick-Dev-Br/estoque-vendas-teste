@@ -74,6 +74,24 @@
                         </div>
                     </div>
 
+                    <div class="col-md-6 mb-3">
+                        <div class="row">
+                            <label for="estoque_minimo" class="form-label">
+                                <i class="bi bi-exclamation-triangle"></i> Estoque mínimo *
+                            </label>
+                        </div>
+                        <input type="number"
+                            class="form-control @error('estoque_minimo') is-invalid @enderror"
+                            id="estoque_minimo"
+                            name="estoque_minimo"
+                            value="{{ old('estoque_minimo', $produto->estoque_minimo ?? 5) }}"
+                            min="0"
+                            required>
+                            @error('estoque_minimo')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                    </div>
+
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="tipo_unidade" class="form-label">Tipo de unidade *</label>

@@ -24,6 +24,7 @@
                 <form action="{{ route('vendas.update', $venda) }}" method="POST">
                     @csrf
                     @method('PUT')
+                        <input type="hidden" name="canal_venda" value="{{ old('canal_venda', $venda->canal_venda ?? 'online') }}">
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -276,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const preco = Number(select.selectedOptions[0]?.dataset.preco || 0);
             total += preco * quantidade;
         });
-        totalSpan.textContent = total.tolocaleString('pt-BR', {
+        totalSpan.textContent = total.toLocaleString('pt-BR', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         });

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Produto;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,10 +27,16 @@ class NotificacaoController extends Controller
         }
 
         $notificacoes = $query->paginate(15)->withQueryString();
+        $produtosAlertasAtuais = Produto::query()
+            ->estoqueBaixo()
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->all();
 
         return view('notificacoes.index', [
             'notificacoes' => $notificacoes,
             'filtro' => in_array($filtro, ['nao_lidas', 'lidas'], true) ? $filtro : 'todas',
+            'produtosAlertasAtuais' => $produtosAlertasAtuais,
         ]);
     }
 
@@ -46,7 +53,7 @@ class NotificacaoController extends Controller
         return back()->with('success', 'Notificação marcada como lida.');
     }
 
-        public function markAllAsRead(Request $request): RedirectResponse
+    public function markAllAsRead(Request $request): RedirectResponse
     {
         $request->user()->unreadNotifications()->update(['read_at' => now()]);
         $this->limparCacheNotificacoes($request);
@@ -54,7 +61,7 @@ class NotificacaoController extends Controller
         return back()->with('success', 'Todas as notificações foram marcadas como lidas.');
     }
 
-        public function destroy(Request $request, string $id): RedirectResponse
+    public function destroy(Request $request, string $id): RedirectResponse
     {
         $notificacao = $this->findUserNotification($request, $id);
         $notificacao->delete();

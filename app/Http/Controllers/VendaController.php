@@ -39,6 +39,7 @@ class VendaController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'cliente_id' => 'required|exists:clientes,id',
+            'canal_venda' => 'required|in:online,loja_fisica',
             'forma_pagamento' => 'nullable|string|max:30',
             'data_compra' => 'nullable|date',
             'usar_endereco_cliente' => 'required|boolean',
@@ -54,19 +55,22 @@ class VendaController extends Controller
             'itens.*.quantidade' => 'required|integer|min:1',
         ]);
 
-        if($validator->fails()) {
+        if ($validator->fails()) {
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
         }
 
+        $dados = $validator->validated();
+
         DB::beginTransaction();
 
         try {
-            $cliente = Cliente::findOrFail($request->cliente_id);
+            $cliente = Cliente::findOrFail($dados['cliente_id']);
             $usarEnderecoCliente = $request->boolean('usar_endereco_cliente');
+
             $enderecoData = $usarEnderecoCliente
-                ?[
+                ? [
                     'endereco_entrega' => $cliente->endereco,
                     'numero' => $cliente->numero,
                     'complemento' => $cliente->complemento,
@@ -76,25 +80,24 @@ class VendaController extends Controller
                     'cep' => $cliente->cep,
                 ]
                 : [
-                    'endereco_entrega' => $request->endereco_entrega,
-                    'numero' => $request->numero,
-                    'complemento' => $request->bairro->complemento,
-                    'bairro' => $request->bairro,
-                    'cidade' => $request->cidade,
-                    'estado' => $request->estado,
-                    'cep' => $request->cep,
+                    'endereco_entrega' => $dados['endereco_entrega'],
+                    'numero' => $dados['numero'],
+                    'complemento' => $dados['complemento'] ?? null,
+                    'bairro' => $dados['bairro'],
+                    'cidade' => $dados['cidade'],
+                    'estado' => $dados['estado'],
+                    'cep' => $dados['cep'],
                 ];
 
             $total = 0;
             $itensData = [];
 
-            foreach ($request->itens as $item) {
+            foreach ($dados['itens'] as $item) {
                 $produto = Produto::find($item['produto_id']);
 
                 if (!$produto->podeVender($item['quantidade'])) {
                     throw new \Exception(
-                        "Produto {$produto->nome} não pode ser vendido." .
-                        "Verifique status e estoque."
+                        "Produto {$produto->nome} não pode ser vendido. Verifique status e estoque."
                     );
                 }
 
@@ -105,16 +108,17 @@ class VendaController extends Controller
                     'produto_id' => $item['produto_id'],
                     'quantidade' => $item['quantidade'],
                     'preco_unitario' => $produto->preco,
-                    'subtotal' => $subtotal
+                    'subtotal' => $subtotal,
                 ];
             }
 
             $venda = Venda::create([
-                'cliente_id' => $request->cliente_id,
+                'cliente_id' => $dados['cliente_id'],
                 'total' => $total,
                 'status' => 'pendente',
-                'forma_pagamento' => $request->forma_pagamento,
-                'data_compra' => $request->data_compra,
+                'canal_venda' => $dados['canal_venda'],
+                'forma_pagamento' => $dados['forma_pagamento'] ?? null,
+                'data_compra' => $dados['data_compra'] ?? null,
                 'usar_endereco_cliente' => $usarEnderecoCliente,
                 'endereco_entrega' => $enderecoData['endereco_entrega'],
                 'numero' => $enderecoData['numero'],
@@ -130,7 +134,7 @@ class VendaController extends Controller
                     'venda_id' => $venda->id,
                     'produto_id' => $itemData['produto_id'],
                     'quantidade' => $itemData['quantidade'],
-                    'preco_unitario' => $itemData['preco_unitario']
+                    'preco_unitario' => $itemData['preco_unitario'],
                 ]);
             }
 
@@ -183,18 +187,19 @@ class VendaController extends Controller
             abort(403, 'Só é possível editar vendas pendentes.');
         }
 
-        $request->validate([
-            'cliente_id' => ['required','exists:clientes,id'],
-            'forma_pagamento' => ['nullable','string','max:30'],
-            'data_compra' => ['nullable','date'],
-            'usar_endereco_cliente' => ['required','boolean'],
-            'endereco_entrega' => ['required_if:usar_endereco_cliente,0','string','max:255'],
-            'numero' => ['required_if:usar_endereco_cliente,0','string','max:20'],
-            'complemento' => ['nullable','string','max:100'],
-            'bairro' => ['required_if:usar_endereco_cliente,0','string','max:100'],
-            'cidade' => ['required_if:usar_endereco_cliente,0','string','max:100'],
-            'estado' => ['required_if:usar_endereco_cliente,0','string','size:2'],
-            'cep' => ['required_if:usar_endereco_cliente,0','string','max:15'],
+        $dados = $request->validate([
+            'cliente_id' => ['required', 'exists:clientes,id'],
+            'canal_venda' => ['required', 'in:online,loja_fisica'],
+            'forma_pagamento' => ['nullable', 'string', 'max:30'],
+            'data_compra' => ['nullable', 'date'],
+            'usar_endereco_cliente' => ['required', 'boolean'],
+            'endereco_entrega' => ['required_if:usar_endereco_cliente,0', 'string', 'max:255'],
+            'numero' => ['required_if:usar_endereco_cliente,0', 'string', 'max:20'],
+            'complemento' => ['nullable', 'string', 'max:100'],
+            'bairro' => ['required_if:usar_endereco_cliente,0', 'string', 'max:100'],
+            'cidade' => ['required_if:usar_endereco_cliente,0', 'string', 'max:100'],
+            'estado' => ['required_if:usar_endereco_cliente,0', 'string', 'size:2'],
+            'cep' => ['required_if:usar_endereco_cliente,0', 'string', 'max:15'],
             'itens' => 'required|array|min:1',
             'itens.*.produto_id' => 'required|exists:produtos,id',
             'itens.*.quantidade' => 'required|integer|min:1',
@@ -203,8 +208,9 @@ class VendaController extends Controller
         DB::beginTransaction();
 
         try {
-            $cliente = Cliente::findOrFail($request->cliente_id);
+            $cliente = Cliente::findOrFail($dados['cliente_id']);
             $usarEnderecoCliente = $request->boolean('usar_endereco_cliente');
+
             $enderecoData = $usarEnderecoCliente
                 ? [
                     'endereco_entrega' => $cliente->endereco,
@@ -216,29 +222,25 @@ class VendaController extends Controller
                     'cep' => $cliente->cep,
                 ]
                 : [
-                    'endereco_entrega' => $request->endereco_entrega,
-                    'numero' => $request->numero,
-                    'complemento' => $request->complemento,
-                    'bairro' => $request->bairro,
-                    'cidade' => $request->cidade,
-                    'estado' => $request->estado,
-                    'cep' => $request->cep,
+                    'endereco_entrega' => $dados['endereco_entrega'],
+                    'numero' => $dados['numero'],
+                    'complemento' => $dados['complemento'] ?? null,
+                    'bairro' => $dados['bairro'],
+                    'cidade' => $dados['cidade'],
+                    'estado' => $dados['estado'],
+                    'cep' => $dados['cep'],
                 ];
 
-            // Remove old items
             $venda->itens()->delete();
 
             $total = 0;
             $itensData = [];
 
-            // Procss of items
-            foreach ($request->itens as $item) {
+            foreach ($dados['itens'] as $item) {
                 $produto = Produto::find($item['produto_id']);
 
                 if (!$produto->podeVender($item['quantidade'])) {
-                    throw new \Exception(
-                        "Produto {$produto->nome} não pode ser vendido."
-                    );
+                    throw new \Exception("Produto {$produto->nome} não pode ser vendido.");
                 }
 
                 $subtotal = $produto->preco * $item['quantidade'];
@@ -247,16 +249,16 @@ class VendaController extends Controller
                 $itensData[] = [
                     'produto_id' => $item['produto_id'],
                     'quantidade' => $item['quantidade'],
-                    'preco_unitario' => $produto->preco
+                    'preco_unitario' => $produto->preco,
                 ];
             }
 
-            // att data of sell
             $venda->update([
-                'cliente_id' => $request->cliente_id,
+                'cliente_id' => $dados['cliente_id'],
                 'total' => $total,
-                'forma_pagamento' => $request->forma_pagamento,
-                'data_compra' => $request->data_compra,
+                'canal_venda' => $dados['canal_venda'],
+                'forma_pagamento' => $dados['forma_pagamento'] ?? null,
+                'data_compra' => $dados['data_compra'] ?? null,
                 'usar_endereco_cliente' => $usarEnderecoCliente,
                 'endereco_entrega' => $enderecoData['endereco_entrega'],
                 'numero' => $enderecoData['numero'],
@@ -267,13 +269,12 @@ class VendaController extends Controller
                 'cep' => $enderecoData['cep'],
             ]);
 
-            // crate new items
             foreach ($itensData as $itemData) {
                 VendaItem::create([
                     'venda_id' => $venda->id,
                     'produto_id' => $itemData['produto_id'],
                     'quantidade' => $itemData['quantidade'],
-                    'preco_unitario' => $itemData['preco_unitario']
+                    'preco_unitario' => $itemData['preco_unitario'],
                 ]);
             }
 
@@ -336,5 +337,16 @@ class VendaController extends Controller
             ->get();
 
         return view('vendas.historico', compact('vendas'));
+    }
+
+    public function caixa()
+    {
+        $clientes = Cliente::ativo()->orderBy('nome')->get();
+        $produtos = Produto::where('status', 'ativo')
+            ->where('estoque', '>', 0)
+            ->orderBy('nome')
+            ->get();
+
+        return view('vendas.caixa', compact('clientes', 'produtos'));
     }
 }

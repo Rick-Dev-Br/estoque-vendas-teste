@@ -18,6 +18,7 @@
                     <tr>
                         <th>ID</th>
                         <th>Código</th>
+                        <th>Código de barras</th>
                         <th>Nome</th>
                         <th>Preço</th>
                         <th>Estoque</th>
@@ -31,6 +32,7 @@
                     <tr>
                         <td>#{{ $produto->id }}</td>
                         <td>{{ $produto->codigo }}</td>
+                        <td>{{ $produto->codigo_barras ?: '-' }}</td>
                         <td>{{  $produto->nome }}</td>
                         <td>R$ {{ number_format($produto->preco, 2, ',', '.') }}</td>
                         <td>

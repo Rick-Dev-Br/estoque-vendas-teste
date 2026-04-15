@@ -2,9 +2,7 @@
 
 namespace App\Providers;
 
-use App\Models\Produto;
 use App\Models\User;
-use App\Notifications\EstoqueBaixoNotification;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -50,23 +48,6 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
-            if (Schema::hasTable('produtos')) {
-                 $produtosBaixoEstoque = Produto::whereColumn('estoque', '<=', 'estoque_minimo')
-                    ->where('status', 'ativo')
-                    ->get(['id', 'nome', 'estoque', 'estoque_minimo']);
-
-                $produtosEsgotados = $produtosBaixoEstoque
-                    ->where('estoque', '<=', 0)
-                    ->values();
-
-                $produtosBaixos = $produtosBaixoEstoque
-                    ->where('estoque', '>', 0)
-                    ->values();
-
-                $this->enviarNotificacaoEstoque($usuario, $produtosEsgotados, 'estoque_esgotado');
-                $this->enviarNotificacaoEstoque($usuario, $produtosBaixos, 'estoque_baixo');
-            }
-
             $notificacoes = Cache::remember("notificacoes.lista.{$usuario->id}", now()->addSeconds(30), function () use ($usuario) {
                 return $usuario->notifications()
                     ->latest()
@@ -99,35 +80,4 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 
-    private function enviarNotificacaoEstoque(User $usuario, $produtos, string $tipo): void
-    {
-        $cacheKey = "notificacoes.{$tipo}.{$usuario->id}";
-
-        if ($produtos->isEmpty()) {
-            Cache::forget($cacheKey);
-
-            return;
-        }
-
-        $assinaturaAtual = md5($produtos
-            ->map(fn ($produto) => [
-                $produto->id,
-                $produto->estoque,
-                $produto->estoque_minimo,
-            ])
-            ->values()
-            ->toJson());
-
-        $assinaturaAnterior = Cache::get($cacheKey);
-
-        if ($assinaturaAnterior === $assinaturaAtual) {
-            return;
-        }
-
-        $usuario->notify(new EstoqueBaixoNotification($produtos->toArray(), $tipo));
-
-        Cache::put($cacheKey, $assinaturaAtual, now()->addHours(6));
-        Cache::forget("notificacoes.lista.{$usuario->id}");
-        Cache::forget("notificacoes.nao_lidas.{$usuario->id}");
-    }
 }

@@ -29,9 +29,11 @@ class Produto extends Model
 
     protected $fillable = [
         'codigo',
+        'codigo_barras',
         'nome',
         'preco',
         'estoque',
+        'estoque_minimo',
         'status',
         'tipo_unidade',
         'unidade_medida',
@@ -41,6 +43,7 @@ class Produto extends Model
     protected $casts = [
         'preco' => 'decimal:2',
         'estoque' => 'integer',
+        'estoque_minimo' => 'integer',
         'unidade_quantidade' => 'decimal:2',
     ];
 

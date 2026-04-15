@@ -14,6 +14,7 @@ class Venda extends Model
         'cliente_id',
         'total',
         'status',
+        'canal_venda',
         'data_compra',
         'forma_pagamento',
         'usar_endereco_cliente',
@@ -23,14 +24,19 @@ class Venda extends Model
         'bairro',
         'cidade',
         'estado',
-        'cep'
+        'cep',
     ];
 
     protected $casts = [
         'total' => 'decimal:2',
-        'data_compra' => 'datetime'
+        'data_compra' => 'datetime',
+        'usar_endereco_cliente' => 'boolean',
     ];
 
+    public const CANAIS_VENDA = [
+        'online' => 'Online',
+        'loja_fisica' => 'Loja física',
+    ];
 
     public function cliente()
     {
@@ -42,19 +48,17 @@ class Venda extends Model
         return $this->hasMany(VendaItem::class);
     }
 
-
     public function scopePendente($query)
     {
         return $query->where('status', 'pendente');
     }
-
 
     public function getStatusFormatadoAttribute()
     {
         return [
             'pendente' => 'Pendente',
             'pago' => 'Pago',
-            'cancelado' => 'Cancelado'
+            'cancelado' => 'Cancelado',
         ][$this->status] ?? $this->status;
     }
 
@@ -63,15 +67,28 @@ class Venda extends Model
         return [
             'pendente' => 'warning',
             'pago' => 'success',
-            'cancelado' => 'danger'
+            'cancelado' => 'danger',
         ][$this->status] ?? 'secondary';
     }
 
+    public function getCanalVendaFormatadoAttribute()
+    {
+        return self::CANAIS_VENDA[$this->canal_venda] ?? 'Não informado';
+    }
+
+    public function getCanalVendaClasseAttribute()
+    {
+        return match ($this->canal_venda) {
+            'loja_fisica' => 'primary',
+            'online' => 'dark',
+            default => 'secondary',
+        };
+    }
 
     public function mudarStatus($novoStatus)
     {
         if (!$this->validarTransicaoStatus($novoStatus)) {
-            throw new \Exception("Transição de status inválida.");
+            throw new \Exception('Transição de status inválida.');
         }
 
         if ($novoStatus === 'pago') {
@@ -89,64 +106,63 @@ class Venda extends Model
         $permitidas = [
             'pendente' => ['pago', 'cancelado'],
             'pago' => [],
-            'cancelado' => []
+            'cancelado' => [],
         ];
 
-        return in_array($novoStatus, $permitidas[$this->status] ?? []);
+        return in_array($novoStatus, $permitidas[$this->status] ?? [], true);
     }
 
     private function validarParaPagamento()
-{
-    if (!$this->cliente->podeComprar()) {
-        throw new \Exception("Cliente bloqueado não pode receber venda.");
-    }
-
-    foreach ($this->itens as $item) {
-
-
-        if (!$item->produto) {
-            throw new \Exception(
-                "O item {$item->id} refere-se a um produto que foi removido. A venda não pode ser concluída."
-            );
+    {
+        if (!$this->cliente->podeComprar()) {
+            throw new \Exception('Cliente bloqueado não pode receber venda.');
         }
 
+        foreach ($this->itens as $item) {
+            if (!$item->produto) {
+                throw new \Exception(
+                    "O item {$item->id} refere-se a um produto que foi removido. A venda não pode ser concluída."
+                );
+            }
 
-        if ($item->produto->status !== 'ativo') {
-            throw new \Exception(
-                "O produto '{$item->produto->nome}' está inativo e não pode ser vendido."
-            );
-        }
+            if ($item->produto->status !== 'ativo') {
+                throw new \Exception(
+                    "O produto '{$item->produto->nome}' está inativo e não pode ser vendido."
+                );
+            }
 
-
-        if ($item->produto->estoque < $item->quantidade) {
-            throw new \Exception(
-                "Estoque insuficiente para o produto '{$item->produto->nome}'."
-            );
+            if ($item->produto->estoque < $item->quantidade) {
+                throw new \Exception(
+                    "Estoque insuficiente para o produto '{$item->produto->nome}'."
+                );
+            }
         }
     }
-}
 
     private function executarAcoesStatus($novoStatus)
-{
+    {
+        if ($novoStatus === 'pago') {
+            foreach ($this->itens as $item) {
+                $produto = $item->produto;
 
-    if ($novoStatus === 'pago') {
-        foreach ($this->itens as $item) {
-            $produto = $item->produto;
-            if (!$produto) {
-                throw new \Exception("Produto do item {$item->id} não encontrado. A venda não pode ser finalizada.");
+                if (!$produto) {
+                    throw new \Exception("Produto do item {$item->id} não encontrado. A venda não pode ser finalizada.");
+                }
+
+                $produto->atualizarEstoque($item->quantidade, 'baixa');
             }
-            $produto->atualizarEstoque($item->quantidade, 'baixa');
+        }
+
+        if ($novoStatus === 'cancelado' && $this->status === 'pago') {
+            foreach ($this->itens as $item) {
+                $produto = $item->produto;
+
+                if (!$produto) {
+                    throw new \Exception("Produto do item {$item->id} não encontrado. Impossível restaurar estoque.");
+                }
+
+                $produto->atualizarEstoque($item->quantidade, 'restaurar');
+            }
         }
     }
-
-    if ($novoStatus === 'cancelado' && $this->status === 'pago') {
-        foreach ($this->itens as $item) {
-            $produto = $item->produto;
-            if (!$produto) {
-                throw new \Exception("Produto do item {$item->id} não encontrado. Impossível restaurar estoque.");
-            }
-            $produto->atualizarEstoque($item->quantidade, 'restaurar');
-        }
-    }
-}
 }

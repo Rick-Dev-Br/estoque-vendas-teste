@@ -24,6 +24,9 @@
                     <dt class="col-sm-4">Código (SKU)</dt>
                     <dd class="col-sm-8">{{ $produto->codigo }}</dd>
 
+                    <dt class="col-sm-4">Código de barras</dt>
+                    <dd class="col-sm-8">{{ $produto->codigo_barras ?: '-' }}</dd>
+
                     <dt class="col-sm-4">Nome</dt>
                     <dd class="col-sm-8">{{ $produto->nome }}</dd>
 

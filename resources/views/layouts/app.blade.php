@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ config('app.name', 'Estoque & Vendas') }}</title>
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -12,20 +12,17 @@
 </head>
 <body>
     <div id="app">
-
         <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
             <div class="container">
-                <a class="navbar-brand" href="{{ url('/') }}">
-                    Estoque & Vendas teste rick
+                <a class="navbar-brand" href="{{ route('dashboard') }}">
+                    {{ config('app.name', 'Estoque & Vendas') }}
                 </a>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#navbarSupportedContent">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
-
                     <ul class="navbar-nav me-auto">
                         @auth
                             <li class="nav-item">
@@ -35,19 +32,24 @@
                                 <a class="nav-link" href="{{ route('clientes.index') }}">Clientes</a>
                             </li>
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button"
-                                    data-bs-toggle="dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                     Vendas
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li>
-                                        <a class="dropdown-item" href="{{ route('vendas.index') }}">
-                                            Lista de Vendas
+                                        <a class="dropdown-item" href="{{ route('vendas.caixa') }}">
+                                            <i class="bi bi-upc-scan me-2"></i> Caixa PDV
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="{{ route('vendas.create') }}">
-                                            Nova Venda
+                                            <i class="bi bi-bag me-2"></i> Pedido Online / Manual
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('vendas.index') }}">
+                                            Lista de Vendas
                                         </a>
                                     </li>
                                     <li>
@@ -177,9 +179,9 @@
                                     </div>
                                 </div>
                             </li>
-                                <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button"
-                                    data-bs-toggle="dropdown">
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                     {{ Auth::user()->name }}
                                 </a>
 
@@ -187,15 +189,11 @@
                                     <li>
                                         <a class="dropdown-item"
                                             href="{{ route('logout') }}"
-                                            onclick="event.preventDefault();
-                                            document.getElementById('logout-form').submit();">
+                                            onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                             Sair
                                         </a>
 
-                                        <form id="logout-form"
-                                                action="{{ route('logout') }}"
-                                                method="POST"
-                                                lass="d-none">
+                                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
                                             @csrf
                                         </form>
                                     </li>
@@ -203,7 +201,6 @@
                             </li>
                         @endguest
                     </ul>
-
                 </div>
             </div>
         </nav>
@@ -240,10 +237,9 @@
             </div>
             @yield('content')
         </main>
-
     </div>
+
     @stack('scripts')
     @vite(['resources/js/app.js'])
-
 </body>
 </html>

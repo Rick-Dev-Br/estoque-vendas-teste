@@ -4,80 +4,94 @@ namespace App\Http\Controllers;
 
 use App\Models\Cliente;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class ClienteController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $clientes = Cliente::latest()->get();
+        $busca = trim($request->string('busca')->toString());
+        $status = $request->string('status')->toString();
+
+        $clientes = Cliente::query()
+            ->when($busca !== '', function ($query) use ($busca) {
+                $query->where(function ($subQuery) use ($busca) {
+                    $subQuery->where('nome', 'like', "%{$busca}%")
+                        ->orWhere('email', 'like', "%{$busca}%")
+                        ->orWhere('cpf', 'like', "%{$busca}%");
+                });
+            })
+            ->when(in_array($status, ['ativo', 'bloqueado'], true), function ($query) use ($status) {
+                $query->where('status', $status);
+            })
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
         return view('clientes.index', compact('clientes'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         return view('clientes.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'nome' => 'required|string|max:100',
-            'email' => 'required|email|unique:clientes,email',
+        $dados = $request->validate([
+            'nome' => ['required', 'string', 'max:100'],
+            'nome_completo' => ['nullable', 'string', 'max:150'],
+            'email' => ['required', 'email', 'max:100', 'unique:clientes,email'],
+            'cpf' => ['nullable', 'string', 'max:14', 'unique:clientes,cpf'],
+            'telefone' => ['nullable', 'string', 'max:20'],
+            'endereco' => ['nullable', 'string', 'max:255'],
+            'numero' => ['nullable', 'string', 'max:20'],
+            'complemento' => ['nullable', 'string', 'max:100'],
+            'bairro' => ['nullable', 'string', 'max:100'],
+            'cidade' => ['nullable', 'string', 'max:100'],
+            'estado' => ['nullable', 'string', 'size:2'],
+            'cep' => ['nullable', 'string', 'max:15'],
+            'status' => ['required', 'in:ativo,bloqueado'],
         ], [
             'email.unique' => 'Este email já está cadastrado.',
+            'cpf.unique' => 'CPF já cadastrado.',
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
+        Cliente::create($dados);
 
-        Cliente::create($request->all());
         return redirect()->route('clientes.index')
             ->with('success', 'Cliente criado com sucesso!');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Cliente $cliente)
     {
+        $cliente->load([
+            'vendas' => function ($query) {
+                $query->latest()->limit(10);
+            },
+        ]);
+
         return view('clientes.show', compact('cliente'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Cliente $cliente)
     {
-        $cliente->load(['vendas' => function($q){
-            $q->latest()->limit(5);
-        }]);
+        $cliente->load([
+            'vendas' => function ($query) {
+                $query->latest()->limit(5);
+            },
+        ]);
 
         return view('clientes.edit', compact('cliente'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Cliente $cliente)
     {
-        $data = $request->validate([
+        $dados = $request->validate([
             'nome' => ['required', 'string', 'max:100'],
             'nome_completo' => ['nullable', 'string', 'max:150'],
-            'email' => ['required', 'email', 'max:100', 'unique:clientes,email,' . $cliente->id],
-            'cpf' => ['nullable', 'string', 'max:14'],
+            'email' => ['required', 'email', 'max:100', Rule::unique('clientes', 'email')->ignore($cliente->id)],
+            'cpf' => ['nullable', 'string', 'max:14', Rule::unique('clientes', 'cpf')->ignore($cliente->id)],
             'telefone' => ['nullable', 'string', 'max:20'],
             'endereco' => ['nullable', 'string', 'max:255'],
             'numero' => ['nullable', 'string', 'max:20'],
@@ -89,38 +103,26 @@ class ClienteController extends Controller
             'status' => ['required', 'in:ativo,bloqueado'],
         ]);
 
-        // check only cpf
-        if (!empty($data['cpf'])) {
-            $cpfExiste = Cliente::where('cpf', $data['cpf'])
-                ->where('id', '!=', $cliente->id)
-                ->exists();
-            if ($cpfExiste) {
-                return back()->withErrors(['cpf' => 'CPF já cadastrado.'])->withInput();
-            }
-        }
-
-        $cliente->update($data);
+        $cliente->update($dados);
 
         return redirect()->route('clientes.edit', $cliente)
             ->with('success', 'Cliente atualizado com sucesso!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Cliente $cliente)
     {
         $cliente->delete();
+
         return redirect()->route('clientes.index')
             ->with('success', 'Cliente excluído com sucesso!');
     }
 
     public function toggleStatus(Cliente $cliente)
     {
-        $cliente->status = $cliente->status == 'ativo' ? 'bloqueado' : 'ativo';
+        $cliente->status = $cliente->status === 'ativo' ? 'bloqueado' : 'ativo';
         $cliente->save();
 
         return redirect()->route('clientes.index')
-            ->with('success', 'Status do cliente alterado');
+            ->with('success', 'Status do cliente alterado.');
     }
 }

@@ -24,6 +24,26 @@
                         @enderror
                     </div>
                     <div class="mb-3">
+                        <label for="codigo_barras" class="form-label">
+                            <i class="bi bi-upc-scan"></i> Código de barras
+                        </label>
+                        <input
+                            type="text"
+                            class="form-control @error('codigo_barras') is-invalid @enderror"
+                            id="codigo_barras"
+                            name="codigo_barras"
+                            value="{{ old('codigo_barras') }}"
+                            placeholder="Ex: 7891234567890"
+                            inputmode="numeric"
+                            autocomplete="off">
+                        <div class="form-text">
+                            Código que será lido pela pistola no caixa.
+                        </div>
+                        @error('codigo_barras')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="mb-3">
                         <label for="nome" class="form-label">
                             <i class="bi bi-tag"></i> Nome do Produto *
                         </label>
@@ -57,12 +77,30 @@
                                 value="{{ old('estoque', 0) }}"
                                 min="0"
                                 required
-                                data-clear-on-focus="1">
+                                onfocus="if (this.value === '0') this.value = ''"
+                                onblur="if (this.value === '') this.value = '0'">
 
                     @error('estoque')
                             <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                         </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="estoque_minimo" class="form-label">
+                            <i class="bi bi-exclamation-triangle"></i> Estoque mínimo *
+                        </label>
+                        <input type="number"
+                            class="form-control @error('estoque_minimo') is-invalid @enderror"
+                            id="estoque_minimo"
+                            name="estoque_minimo"
+                            value="{{ old('estoque_minimo', $produto->estoque_minimo ?? 5) }}"
+                            min="0"
+                            required>
+                            @error('estoque_minimo')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                    </div>
+
                     </div>
                     <div class="row">
                         <div class="col-md-4 mb-3">
@@ -105,7 +143,7 @@
                                 class="form-control @error('unidade_quantidade') is-invalid @enderror"
                                 id="unidade_quantidade"
                                 name="unidade_quantidade"
-                                value="{{ old('unidade_quantidade', 1) }}"
+                                value="{{ old('unidade_quantidade') }}"
                                 step="0.01"
                                 min="0.01"
                                 required
@@ -130,3 +168,4 @@
     </div>
 </div>
 @endsection
+

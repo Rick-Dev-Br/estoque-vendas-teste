@@ -5,11 +5,15 @@
     --app-surface: #f8f9fb;
     --app-border: #0350cb;
     --app-text-muted: #6c757d;
-    --app-focus: #4c6fff
+    --app-focus: #4c6fff;
 }
 
 body {
     background-color: #f3f5f8;
+}
+
+.navbar-brand {
+    font-weight: 700;
 }
 
 .card {
@@ -34,7 +38,7 @@ body {
 }
 
 .form-control::placeholder {
-    color:var(--app-text-muted);
+    color: var(--app-text-muted);
 }
 
 .form-control:focus,
@@ -45,9 +49,25 @@ body {
 
 .form-check-input {
     border: 2px solid var(--app-border);
-    background-color: #ffffff;
+    background-color: #f6f9ff;
     accent-color: var(--app-focus);
-    box-shadow: inset 0 0 0 1px rgba(3, 80, 203, 0.35);
+    box-shadow: inset 0 0 0 1px rgba(3, 80, 203, 0.28), 0 0 0 2px rgba(3, 80, 203, 0.08);
+}
+
+.form-check-input:not(:checked) {
+    border-color: #5f7fcf;
+}
+
+.form-check-input:disabled {
+    opacity: 1;
+    background-color: #edf3ff;
+    border-color: #89a3dc;
+    box-shadow: inset 0 0 0 1px rgba(95, 127, 207, 0.35);
+}
+
+.form-check-input:disabled ~ .form-check-label {
+    color: #4b5563;
+    opacity: 1;
 }
 
 .form-check-input:checked {
@@ -176,6 +196,61 @@ body {
     opacity: 0.85;
 }
 
+.pdv-page {
+    display: block;
+}
+
+.pdv-hero {
+    background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
+}
+
+.pdv-eyebrow {
+    display: inline-block;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #1d4ed8;
+}
+
+.pdv-panel {
+    border-color: #dbe4ff;
+}
+
+.pdv-scanner-input {
+    min-height: 60px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.pdv-item-row {
+    padding: 1rem;
+    border: 1px solid #e7eefc;
+    border-radius: 0.9rem;
+    background: #fbfdff;
+}
+
+.pdv-total-card {
+    border: 1px solid #dbe4ff;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.1);
+}
+
+.pdv-total-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--app-text-muted);
+}
+
+.pdv-total-value {
+    font-size: clamp(2rem, 5vw, 2.8rem);
+    font-weight: 800;
+    line-height: 1;
+    color: #0f172a;
+}
+
 @media (max-width: 575.98px) {
     .notification-dropdown {
         min-width: 300px;
@@ -185,5 +260,9 @@ body {
     .notification-dropdown-header {
         flex-direction: column;
         align-items: stretch !important;
+    }
+
+    .pdv-item-row {
+        padding: 0.85rem;
     }
 }

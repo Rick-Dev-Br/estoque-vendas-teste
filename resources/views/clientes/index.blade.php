@@ -41,6 +41,9 @@
                             <a href="{{ route('clientes.edit', $cliente) }}" class="btn btn-sm btn-info" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </a>
+                            <a href="{{ route('clientes.show', $cliente) }}" class="btn btn-sm btn-secondary" title="Ver">
+                                <i class="bi bi-eye"></i>
+                            </a>
                             <form action="{{ route('clientes.toggle-status', $cliente) }}" method="POST" class="d-inline">
                                 @csrf
                                 @method('PATCH')

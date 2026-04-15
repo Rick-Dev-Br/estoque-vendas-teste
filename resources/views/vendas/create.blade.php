@@ -13,6 +13,7 @@
             <div class="card-body">
                 <form action="{{ route('vendas.store') }}" method="POST">
                     @csrf
+                        <input type="hidden" name="canal_venda" value="online">
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
